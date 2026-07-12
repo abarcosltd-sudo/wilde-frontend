@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --wilde-black: #111111;
+  --wilde-cream: #F0EDE8;
+  --wilde-muted: #888888;
+  --ion-background-color: #ffffff;
+  --ion-text-color: #111111;
+  --ion-color-primary: #111111;
+  --ion-color-primary-rgb: 17,17,17;
+  --ion-color-primary-contrast: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body { font-family: 'Inter', system-ui, sans-serif; }
