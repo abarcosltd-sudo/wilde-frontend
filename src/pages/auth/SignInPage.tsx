@@ -36,7 +36,7 @@ const SignInPage: React.FC = () => {
     <IonPage>
       <IonContent className="ion-padding">
         <div className="flex flex-col gap-4 max-w-sm mx-auto pt-16">
-          <img src="/wilde-logo.png" alt="WILDE" className="w-20 h-20 mx-auto object-contain" />
+          <img src="/wilde-logo2.png" alt="WILDE" className="w-20 h-20 mx-auto object-contain" />
           <form onSubmit={handleSignIn} className="flex flex-col gap-3">
             <label htmlFor="email" className="text-xs text-wilde-muted">Email</label>
             <input id="email" name="email" type="email" placeholder="you@example.com"
