@@ -1,4 +1,4 @@
-import React, { lazy } from 'react';
+import React from 'react';
 import { IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Redirect } from 'react-router-dom';
@@ -6,39 +6,24 @@ import { ROUTES } from '@/constants';
 import AuthGuard from './AuthGuard';
 import GuestGuard from './GuestGuard';
 import MainLayout from '@/components/layout/MainLayout';
-import { useAuthStore } from '@/store/slices/authStore';
 
-const SplashPage         = lazy(() => import('@/pages/auth/SplashPage'));
-const OnboardingPage     = lazy(() => import('@/pages/onboarding/OnboardingPage'));
-const SignInPage         = lazy(() => import('@/pages/auth/SignInPage'));
-const SignUpPage         = lazy(() => import('@/pages/auth/SignUpPage'));
-const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
-const HomePage           = lazy(() => import('@/pages/main/HomePage'));
-const ExplorePage        = lazy(() => import('@/pages/main/ExplorePage'));
-const CreateMenuPage     = lazy(() => import('@/pages/writing/CreateMenuPage'));
-const WritingStudioPage  = lazy(() => import('@/pages/writing/WritingStudioPage'));
-const CollaborationPage  = lazy(() => import('@/pages/writing/CollaborationPage'));
-const MarketplacePage    = lazy(() => import('@/pages/marketplace/MarketplacePage'));
-const JobsPage           = lazy(() => import('@/pages/marketplace/JobsPage'));
-const AiAssistantPage    = lazy(() => import('@/pages/main/AiAssistantPage'));
-const NotificationsPage  = lazy(() => import('@/pages/main/NotificationsPage'));
-const ProfileDashPage    = lazy(() => import('@/pages/profile/ProfileDashPage'));
-const CreatorProfilePage = lazy(() => import('@/pages/profile/CreatorProfilePage'));
-const SettingsPage       = lazy(() => import('@/pages/settings/SettingsPage'));
-
-
-const DebugBadge: React.FC = () => {
-  const { user, firebaseUser, isLoading } = useAuthStore();
-  return (
-    <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 99999,
-      background: 'black', color: 'lime', fontSize: 10, padding: 4,
-      fontFamily: 'monospace', wordBreak: 'break-all',
-    }}>
-      isLoading: {String(isLoading)} | firebaseUser: {firebaseUser ? firebaseUser.email : 'null'} | user(profile): {user ? user.username || user.uid : 'null'}
-    </div>
-  );
-};
+import SplashPage from '@/pages/auth/SplashPage';
+import OnboardingPage from '@/pages/onboarding/OnboardingPage';
+import SignInPage from '@/pages/auth/SignInPage';
+import SignUpPage from '@/pages/auth/SignUpPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import HomePage from '@/pages/main/HomePage';
+import ExplorePage from '@/pages/main/ExplorePage';
+import CreateMenuPage from '@/pages/writing/CreateMenuPage';
+import WritingStudioPage from '@/pages/writing/WritingStudioPage';
+import CollaborationPage from '@/pages/writing/CollaborationPage';
+import MarketplacePage from '@/pages/marketplace/MarketplacePage';
+import JobsPage from '@/pages/marketplace/JobsPage';
+import AiAssistantPage from '@/pages/main/AiAssistantPage';
+import NotificationsPage from '@/pages/main/NotificationsPage';
+import ProfileDashPage from '@/pages/profile/ProfileDashPage';
+import CreatorProfilePage from '@/pages/profile/CreatorProfilePage';
+import SettingsPage from '@/pages/settings/SettingsPage';
 
 const AppRouter: React.FC = () => (
   <IonReactRouter>
@@ -64,7 +49,6 @@ const AppRouter: React.FC = () => (
             <Route exact path={ROUTES.NOTIFICATIONS}  component={NotificationsPage} />
             <Route exact path={ROUTES.SETTINGS}       component={SettingsPage} />
             <Redirect from="/app" to={ROUTES.HOME} exact />
-            <DebugBadge />
           </IonRouterOutlet>
         </MainLayout>
       </AuthGuard>
