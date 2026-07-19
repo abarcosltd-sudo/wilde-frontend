@@ -5,6 +5,7 @@ import { useHistory } from 'react-router-dom';
 import { signIn, signInWithGoogle } from '@/firebase/auth.helpers';
 import { ROUTES } from '@/constants';
 import Button from '@/components/ui/Button';
+import Swal from 'sweetalert2';
 
 const SignInPage: React.FC = () => {
   const history = useHistory();
@@ -16,8 +17,17 @@ const SignInPage: React.FC = () => {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     try {
       await signIn(email, password);
+      Swal.fire({
+      icon: 'success',
+      title: 'Sign in successful',
+      text: 'Welcome to Wilde',
+    });
     } catch (err) {
-      console.error(err);
+      Swal.fire({
+      icon: 'error',
+      title: 'Sign in failed',
+      text: err?.message || 'Invalid email or password.',
+    });
     }
     
   };
