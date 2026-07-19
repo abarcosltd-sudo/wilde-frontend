@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { updateDocument } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
-import { Collections } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 
 export const useSettings = () => {
   const { user, setUser } = useAuthStore();
