@@ -22,7 +22,7 @@ const SignInPage: React.FC = () => {
       title: 'Sign in successful',
       text: 'Welcome to Wilde',
     });
-    } catch (err) {
+    } catch (err: any) {
       Swal.fire({
       icon: 'error',
       title: 'Sign in failed',
