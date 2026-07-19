@@ -17,17 +17,20 @@ const SignInPage: React.FC = () => {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
     try {
       await signIn(email, password);
-      Swal.fire({
-      icon: 'success',
-      title: 'Sign in successful',
-      text: 'Welcome to Wilde',
-    });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Sign in successful',
+        text: 'Welcome to Wilde',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      history.replace(ROUTES.HOME);
     } catch (err: any) {
       Swal.fire({
-      icon: 'error',
-      title: 'Sign in failed',
-      text: err?.message || 'Invalid email or password.',
-    });
+        icon: 'error',
+        title: 'Sign in failed',
+        text: err?.message || 'Invalid email or password.',
+      });
     }
     
   };
