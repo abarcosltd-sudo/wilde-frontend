@@ -16,9 +16,7 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <IonApp>
-        <Suspense fallback={<SplashScreen />}>
-          <AppRouter />
-        </Suspense>
+        <AppRouter />
       </IonApp>
     </QueryClientProvider>
   )
