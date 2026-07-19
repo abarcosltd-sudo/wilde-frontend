@@ -6,7 +6,8 @@ import { useAuthStore } from '@/store/slices/authStore';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import WorkCard from '@/components/ui/WorkCard';
 import Avatar from '@/components/ui/Avatar';
-import { formatCount, ROUTES } from '@/constants';
+import { ROUTES } from '@/constants';
+import { formatCount } from '@/utils';
 
 const HomePage: React.FC = () => {
   const { user } = useAuthStore();
