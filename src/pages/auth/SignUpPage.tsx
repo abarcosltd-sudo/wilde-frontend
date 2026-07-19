@@ -3,7 +3,8 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { signUp } from '@/firebase/auth.helpers';
 import { createDocument } from '@/firebase/firestore.helpers';
-import { Collections, ROUTES } from '@/constants';
+import { ROUTES } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 import Button from '@/components/ui/Button';
 
 const SignUpPage: React.FC = () => {
