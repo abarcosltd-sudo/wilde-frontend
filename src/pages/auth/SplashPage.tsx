@@ -6,7 +6,7 @@ import { ROUTES } from '@/constants';
 
 export const SplashScreen: React.FC = () => (
   <div className="flex flex-col items-center justify-center h-screen bg-white gap-3">
-    <img src="/wilde-logo.png" alt="WILDE" className="w-32 h-32 object-contain" />
+    <img src="/wilde-logo2.png" alt="WILDE" className="w-32 h-32 object-contain" />
     <p className="text-sm text-wilde-muted">Where Creatives find their voice</p>
   </div>
 );
