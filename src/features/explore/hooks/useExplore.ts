@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { queryDocuments, Collections, orderBy, limit, where } from '@/firebase/firestore.helpers';
+import { QueryConstraint } from 'firebase/firestore';
 import { Work } from '@/types';
 
 export const useExplore = (query: string, tab: string) => {
@@ -8,7 +9,7 @@ export const useExplore = (query: string, tab: string) => {
 
   const search = useCallback(async () => {
     setIsLoading(true);
-    const constraints = [orderBy('createdAt', 'desc'), limit(40)];
+    const constraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(40)];
     if (tab !== 'All' && tab !== 'Creators') {
       constraints.unshift(where('type', '==', tab.toLowerCase().replace('s', '')));
     }
