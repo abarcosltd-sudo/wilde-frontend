@@ -15,7 +15,8 @@ const SignUpPage: React.FC = () => {
     const form = e.currentTarget;
     const get = (name: string) => (form.elements.namedItem(name) as HTMLInputElement).value;
     const cred = await signUp(get('email'), get('password'));
-    await createDocument(Collections.USERS, {
+    try {
+      await createDocument(Collections.USERS, {
       displayName: get('displayName'),
       username: get('username'),
       email: get('email'),
@@ -23,6 +24,9 @@ const SignUpPage: React.FC = () => {
       followersCount: 0, followingCount: 0, worksCount: 0, totalSales: 0, streakCount: 0,
     }, cred.user.uid);
     history.replace(ROUTES.ONBOARDING);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
