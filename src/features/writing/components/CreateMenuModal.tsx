@@ -7,7 +7,8 @@ import {
 import { useHistory } from 'react-router-dom';
 import { createDocument } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
-import { Collections, ROUTES } from '@/constants';
+import { ROUTES } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 
 const OPTIONS = [
   { icon: createOutline,   label: 'Write Story',       type: 'short_story' },
