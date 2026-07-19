@@ -4,7 +4,8 @@ import { useHistory } from 'react-router-dom';
 import { useAuthStore } from '@/store/slices/authStore';
 import { subscribeToAuth } from '@/firebase/auth.helpers';
 import { getDocument } from '@/firebase/firestore.helpers';
-import { Collections, ROUTES } from '@/constants';
+import { ROUTES } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 import { User } from '@/types';
 
 export const SplashScreen: React.FC = () => (
