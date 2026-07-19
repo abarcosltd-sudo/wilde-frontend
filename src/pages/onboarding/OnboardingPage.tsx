@@ -4,7 +4,8 @@ import { brushOutline, pencilOutline, ticketOutline, bookOutline, cashOutline, e
 import { useHistory } from 'react-router-dom';
 import { useAuthStore } from '@/store/slices/authStore';
 import { updateDocument } from '@/firebase/firestore.helpers';
-import { Collections, CREATIVE_ROLES, ROUTES } from '@/constants';
+import { CREATIVE_ROLES, ROUTES } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 import { CreativeRole } from '@/types';
 import Button from '@/components/ui/Button';
 
