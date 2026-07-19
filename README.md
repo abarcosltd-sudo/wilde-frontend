@@ -15,7 +15,7 @@ npm run build            # production build -> dist/
 
 ## Backend
 
-This app talks to the WILDE backend API. Set `VITE_API_BASE_URL` (see `.env.example`) to wherever that service is hosted. The backend lives in its own repo: https://github.com/<your-org>/wilde-backend
+This app talks to the WILDE backend API. Set `VITE_API_BASE_URL` (see `.env.example`) to wherever that service is hosted. The backend lives in its own repo: https://github.com/abarcosltd-sudo/wilde-backend
 
 ## Firebase project config
 
