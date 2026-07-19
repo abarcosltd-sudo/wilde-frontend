@@ -6,6 +6,7 @@ import { createDocument } from '@/firebase/firestore.helpers';
 import { ROUTES } from '@/constants';
 import { Collections } from '@/firebase/firestore.helpers';
 import Button from '@/components/ui/Button';
+import Swal from 'sweetalert2';
 
 const SignUpPage: React.FC = () => {
   const history = useHistory();
@@ -23,9 +24,20 @@ const SignUpPage: React.FC = () => {
       roles: [], isPremium: false,
       followersCount: 0, followingCount: 0, worksCount: 0, totalSales: 0, streakCount: 0,
     }, cred.user.uid);
+      await Swal.fire({
+      icon: 'success',
+      title: 'Welcome to WILDE!',
+      text: 'Your account has been created.',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     history.replace(ROUTES.ONBOARDING);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      Swal.fire({
+      icon: 'error',
+      title: 'Sign up failed',
+      text: err?.message || 'Something went wrong. Please try again.',
+    });
     }
   };
 
