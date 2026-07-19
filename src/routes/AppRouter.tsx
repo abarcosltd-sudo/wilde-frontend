@@ -6,6 +6,7 @@ import { ROUTES } from '@/constants';
 import AuthGuard from './AuthGuard';
 import GuestGuard from './GuestGuard';
 import MainLayout from '@/components/layout/MainLayout';
+import { useAuthStore } from '@/store/slices/authStore';
 
 const SplashPage         = lazy(() => import('@/pages/auth/SplashPage'));
 const OnboardingPage     = lazy(() => import('@/pages/onboarding/OnboardingPage'));
@@ -24,6 +25,20 @@ const NotificationsPage  = lazy(() => import('@/pages/main/NotificationsPage'));
 const ProfileDashPage    = lazy(() => import('@/pages/profile/ProfileDashPage'));
 const CreatorProfilePage = lazy(() => import('@/pages/profile/CreatorProfilePage'));
 const SettingsPage       = lazy(() => import('@/pages/settings/SettingsPage'));
+
+
+const DebugBadge: React.FC = () => {
+  const { user, firebaseUser, isLoading } = useAuthStore();
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 99999,
+      background: 'black', color: 'lime', fontSize: 10, padding: 4,
+      fontFamily: 'monospace', wordBreak: 'break-all',
+    }}>
+      isLoading: {String(isLoading)} | firebaseUser: {firebaseUser ? firebaseUser.email : 'null'} | user(profile): {user ? user.username || user.uid : 'null'}
+    </div>
+  );
+};
 
 const AppRouter: React.FC = () => (
   <IonReactRouter>
@@ -49,6 +64,7 @@ const AppRouter: React.FC = () => (
             <Route exact path={ROUTES.NOTIFICATIONS}  component={NotificationsPage} />
             <Route exact path={ROUTES.SETTINGS}       component={SettingsPage} />
             <Redirect from="/app" to={ROUTES.HOME} exact />
+            <DebugBadge />
           </IonRouterOutlet>
         </MainLayout>
       </AuthGuard>
