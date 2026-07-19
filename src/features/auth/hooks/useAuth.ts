@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { subscribeToAuth } from '@/firebase/auth.helpers';
 import { getDocument } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
-import { Collections } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 import { User } from '@/types';
 
 export const useAuth = () => {
