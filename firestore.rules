@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth()        { return request.auth != null; }
+    function isOwner(uid)    { return isAuth() && request.auth.uid == uid; }
+
+    match /Users/{uid} {
+      allow read:  if true;
+      allow write: if isOwner(uid);
+    }
+
+    match /Works/{workId} {
+      allow read: if true;
+      allow create: if isAuth();
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /Chapters/{chapterId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+
+    match /Follows/{followId} {
+      allow read: if true;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.followerId;
+      allow delete: if isAuth() && request.auth.uid == resource.data.followerId;
+    }
+
+    match /Posts/{postId} {
+      allow read: if true;
+      allow create: if isAuth();
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /Comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuth();
+      allow delete: if isAuth() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /Groups/{groupId} {
+      allow read: if true;
+      allow create: if isAuth();
+      allow update: if isAuth() && request.auth.uid == resource.data.createdBy;
+    }
+
+    match /GroupMembers/{memberId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    match /GhostwriterListings/{listingId} {
+      allow read: if true;
+      allow write: if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth();
+    }
+
+    match /Orders/{orderId} {
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.buyerId ||
+        request.auth.uid == resource.data.sellerId
+      );
+      allow create: if isAuth();
+    }
+
+    match /Prompts/{promptId} {
+      allow read, write: if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth();
+    }
+
+    match /Streaks/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /Reminders/{reminderId} {
+      allow read, write: if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth();
+    }
+
+    match /Notifications/{notifId} {
+      allow read: if isAuth() && request.auth.uid == resource.data.userId;
+      allow update: if isAuth() && request.auth.uid == resource.data.userId;
+    }
+
+    match /Jobs/{jobId} {
+      allow read: if true;
+      allow create: if isAuth();
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.posterId;
+    }
+
+    match /Payments/{paymentId} {
+      allow read: if isAuth() && request.auth.uid == resource.data.userId;
+    }
+  }
+}
