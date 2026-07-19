@@ -11,13 +11,19 @@ export const useAuth = () => {
   useEffect(() => {
     const unsub = subscribeToAuth(async (fbUser) => {
       store.setFirebaseUser(fbUser);
-      if (fbUser) {
-        const profile = await getDocument<User>(Collections.USERS, fbUser.uid);
-        store.setUser(profile);
-      } else {
-        store.clear();
+      try {
+        if (fbUser) {
+          const profile = await getDocument<User>(Collections.USERS, fbUser.uid);
+          store.setUser(profile);
+        } else {
+          store.clear();
+        }
+      } catch (err) {
+        console.error('Failed to load user profile:', err);
+        store.setUser(null);
+      } finally {
+        store.setLoading(false);
       }
-      store.setLoading(false);
     });
     return unsub;
   }, []);
