@@ -11,14 +11,17 @@ const queryClient = new QueryClient({
   },
 });
 
-const App: React.FC = () => (
-  <QueryClientProvider client={queryClient}>
-    <IonApp>
-      <Suspense fallback={<SplashScreen />}>
-        <AppRouter />
-      </Suspense>
-    </IonApp>
-  </QueryClientProvider>
-);
+const App: React.FC = () => {
+  useAuth()
+  return (
+    <QueryClientProvider client={queryClient}>
+      <IonApp>
+        <Suspense fallback={<SplashScreen />}>
+          <AppRouter />
+        </Suspense>
+      </IonApp>
+    </QueryClientProvider>
+  )
+};
 
 export default App;
