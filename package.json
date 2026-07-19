@@ -19,6 +19,7 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^5.3.4",
+    "sweetalert2": "^11.14.0",
     "zustand": "^4.5.2",
     "firebase": "^10.12.0",
     "axios": "^1.7.2",
