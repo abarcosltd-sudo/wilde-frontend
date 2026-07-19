@@ -45,7 +45,7 @@ const SignUpPage: React.FC = () => {
     <IonPage>
       <IonContent className="ion-padding">
         <div className="flex flex-col gap-3 max-w-sm mx-auto pt-12">
-          <h1 className="text-3xl font-black text-center">Join WILDE</h1>
+          <img src="/wilde-logo2.png" alt="WILDE" className="w-20 h-20 mx-auto object-contain" />
           <form onSubmit={handleSignUp} className="flex flex-col gap-3">
             <label htmlFor="displayName" className="text-xs text-wilde-muted">Full name</label>
             <input id="displayName" name="displayName" placeholder="Your full name"
