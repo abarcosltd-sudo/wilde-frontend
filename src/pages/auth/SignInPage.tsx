@@ -14,7 +14,12 @@ const SignInPage: React.FC = () => {
     const form = e.currentTarget;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
-    await signIn(email, password);
+    try {
+      await signIn(email, password);
+    } catch (err) {
+      console.error(err);
+    }
+    
   };
 
   return (
