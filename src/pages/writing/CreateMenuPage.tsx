@@ -7,7 +7,7 @@ import {
 import { useHistory } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import { createDocument } from '@/firebase/firestore.helpers';
-import { Collections } from '@/constants';
+import { Collections } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
 
 const CREATE_OPTIONS = [
