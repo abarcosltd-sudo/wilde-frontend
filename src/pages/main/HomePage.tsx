@@ -22,7 +22,7 @@ const HomePage: React.FC = () => {
         </IonRefresher>
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-black">WILDE</h1>
+            <img src="/wilde-logo2.png" alt="WILDE" className="w-8 h-8 object-contain" />
             <div className="flex gap-1">
               <button onClick={() => history.push(ROUTES.EXPLORE)}
                 aria-label="Search"
