@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryDocuments, Collections, where, orderBy, limit } from '@/firebase/firestore.helpers';
-import { Work, GhostwriterListing } from '@/types';
+import { Work, WorkType, GhostwriterListing } from '@/types';
+
+const BOOK_TYPES: WorkType[] = ['short_story', 'long_work', 'poetry', 'screenplay', 'playlet'];
 
 export const useMarketplace = (tab: string) => {
   const { data: works = [] } = useQuery({
@@ -9,8 +11,11 @@ export const useMarketplace = (tab: string) => {
       const published = await queryDocuments<Work>(Collections.WORKS, [
         where('status', '==', 'published'), limit(50),
       ]);
-      return published
-        .filter(w => (w.price ?? 0) > 0)
+      const priced = published.filter(w => (w.price ?? 0) > 0);
+      const inTab = tab === 'Books' ? priced.filter(w => BOOK_TYPES.includes(w.type))
+        : tab === 'Art' ? priced.filter(w => w.type === 'artwork')
+        : priced;
+      return inTab
         .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
         .slice(0, 20);
     },
