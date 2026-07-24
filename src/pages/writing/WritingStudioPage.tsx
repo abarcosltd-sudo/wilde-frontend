@@ -163,14 +163,15 @@ const WritingStudioPage: React.FC = () => {
             </div>
           )}
           {collaboratorProfiles.length > 0 && (
-            <div className="flex items-center gap-1 px-4 py-2 border-t border-wilde-border">
+            <button onClick={() => history.push(ROUTES.COLLABORATION.replace(':workId', workId))}
+              className="flex items-center gap-1 px-4 py-2 border-t border-wilde-border w-full">
               {collaboratorProfiles.map(u => (
                 <Avatar key={u.id} name={u.displayName} src={u.photoURL} size="sm" />
               ))}
               <span className="text-xs text-wilde-muted ml-1">
                 {collaboratorProfiles.length} collaborator{collaboratorProfiles.length > 1 ? 's' : ''}
               </span>
-            </div>
+            </button>
           )}
         </IonToolbar>
       </IonHeader>

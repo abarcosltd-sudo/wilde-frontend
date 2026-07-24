@@ -37,18 +37,46 @@ work top to bottom within each group. Each item names the files involved.
 
 ## Medium priority — engagement / retention
 
-- [ ] **Nothing ever creates a Notification** — needs an `allow create` rule on
-  `/Notifications/{notifId}` in `firestore.rules` plus actual write calls on
-  real events (new follower, published work, purchase, etc.). See note above.
-- [ ] **Wire up Streaks** — `src/features/streaks/hooks/useStreaks.ts` and
-  `src/components/ui/StreakBadge.tsx` are fully built but never rendered anywhere.
-- [ ] **Jobs: make reachable + real Apply** — no nav/link anywhere points to `/app/jobs`;
-  `useJobs.ts`'s `apply()` is a no-op stub. No "Post a Job" UI exists either.
-- [ ] **Collaboration screen is mostly fake** — `src/pages/writing/CollaborationPage.tsx`
-  + `src/features/collaboration/hooks/useCollaboration.ts`: `addComment` is a no-op,
-  collaborators list never populates, message body and "Someone is typing…" are
-  static fake content, no real-time sync. Also unreachable from any UI (Writing
-  Studio's "Collaborate" button opens the invite modal instead).
+- [x] **Nothing ever creates a Notification** — added `allow create` rule on
+  `/Notifications/{notifId}` (needs deploy, see below) and real writes on:
+  new follower (`useCreatorProfile.ts`), purchase (`useBuyWork.ts`), published
+  work → each follower (`useWorkEditor.ts`). Via a shared `features/notifications/notify.ts`.
+- [x] **Wire up Streaks** — `useStreaks.ts` now creates the doc on first write
+  and computes real day-based streak math (same-day no-op, consecutive-day
+  increment, gap resets to 1); `logWrite()` is called from `useWorkEditor.save()`;
+  `StreakBadge` now renders on `ProfileDashPage`.
+- [x] **Jobs: make reachable + real Apply** — added a briefcase icon on
+  `MarketplacePage` linking to `/app/jobs`; `apply()` now writes a real
+  `JobApplications` doc (new collection, needs a rules deploy, see below) and
+  the button shows "Applied" once you have. Also added a minimal "Post a Job"
+  modal since there was no way to create one at all.
+- [x] **Collaboration screen is mostly fake** — `addComment` now writes real
+  Comments with a live `onSnapshot` listener (see index note below); collaborators
+  list is now populated from `work.collaborators`; real `work.content` shown
+  instead of fake filler text; removed the permanently-fake "Someone is
+  typing…" and "Online" indicators (no presence system exists — better to
+  remove than fake it); "Invite" now opens the real `CollaboratorPickerModal`,
+  gated to the work's author. Made it reachable: the collaborator row in
+  `WritingStudioPage` now links to `/app/collab/:workId`.
+  - **Found while fixing this**: the Comments query (`where('postId') + orderBy('createdAt')`)
+    needs a Firestore composite index that was never created — this was
+    already broken before my changes, just never exercised since comments were
+    never created. Fixed by sorting client-side instead of adding another
+    required index.
+  - **Found while fixing this**: `createdAt` fields are written via
+    `serverTimestamp()` (a Firestore `Timestamp` object) but typed as `string`
+    and passed straight into `new Date(...)`/`formatTimeAgo` everywhere. Worked
+    around it locally for comment sorting; **this is a systemic issue across
+    the whole app** (Notifications, Works, Jobs, everything with a
+    `createdAt`) and needs its own pass — see new item below.
+- [ ] **`createdAt`/`updatedAt` are Firestore Timestamps, not strings** — every
+  `User`/`Work`/`Comment`/etc. type declares `createdAt: string`, and
+  `formatTimeAgo`/`formatDate` (`src/utils/format.ts`) call `new Date(dateStr)`
+  on them directly. A Firestore `Timestamp` object passed to `new Date()`
+  produces `Invalid Date`. Likely already silently broken anywhere a
+  freshly-created document's timestamp is displayed. Needs either converting
+  on read (`.toDate().toISOString()`) or updating the format helpers to accept
+  a Timestamp.
 - [ ] **Reviews tab** — `src/pages/profile/CreatorProfilePage.tsx` hardcodes
   "No reviews yet"; no review data model or submission flow exists.
 - [ ] **Writing Studio rich-text toolbar is decorative** — Bold/Italic/Underline/List/
@@ -57,7 +85,8 @@ work top to bottom within each group. Each item names the files involved.
 - [ ] **Dead no-op buttons** — wire up or remove: Home "See all" (`HomePage.tsx`),
   Marketplace "Hire" (`MarketplacePage.tsx`), Creator Profile "Hire"
   (`CreatorProfilePage.tsx`), Profile "This Month ›" (`ProfileDashPage.tsx`),
-  Writing Studio "⋮ More options", Collaboration "Invite" and "⋮".
+  Writing Studio "⋮ More options", Collaboration "⋮". (Collaboration's
+  "Invite" is now wired — see above.)
 
 ## Lower priority — larger features / cleanup
 

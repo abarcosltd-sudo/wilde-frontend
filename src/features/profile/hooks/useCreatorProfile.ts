@@ -5,6 +5,7 @@ import {
 } from '@/firebase/firestore.helpers';
 import { User, Work, Follow } from '@/types';
 import { useAuthStore } from '@/store/slices/authStore';
+import { notify } from '@/features/notifications/notify';
 
 export const useCreatorProfile = (uid: string) => {
   const [creator, setCreator] = useState<User | null>(null);
@@ -45,6 +46,7 @@ export const useCreatorProfile = (uid: string) => {
       setFollowId(id);
       setCreator(c => c && { ...c, followersCount: c.followersCount + 1 });
       updateDocument(Collections.USERS, uid, { followersCount: increment(1) }).catch(() => {});
+      notify(uid, '👤', `${user.displayName} started following you`).catch(() => {});
     }
   };
 

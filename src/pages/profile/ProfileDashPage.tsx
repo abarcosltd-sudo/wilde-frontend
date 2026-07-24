@@ -4,7 +4,9 @@ import { menuOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useProfileDash } from '@/features/profile/hooks/useProfileDash';
+import { useStreaks } from '@/features/streaks/hooks/useStreaks';
 import Avatar from '@/components/ui/Avatar';
+import StreakBadge from '@/components/ui/StreakBadge';
 import EditProfileModal from '@/features/profile/components/EditProfileModal';
 import { formatCount, formatCurrency } from '@/utils';
 import { ROUTES } from '@/constants';
@@ -12,6 +14,7 @@ import { ROUTES } from '@/constants';
 const ProfileDashPage: React.FC = () => {
   const { user } = useAuthStore();
   const { analytics } = useProfileDash();
+  const { streak } = useStreaks();
   const history = useHistory();
   const [isEditOpen, setEditOpen] = useState(false);
 
@@ -23,11 +26,14 @@ const ProfileDashPage: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-base">Your Studio</h2>
-            <button onClick={() => history.push(ROUTES.SETTINGS)}
+            <div className="flex items-center gap-2">
+              {!!streak?.currentStreak && <StreakBadge count={streak.currentStreak} />}
+              <button onClick={() => history.push(ROUTES.SETTINGS)}
               aria-label="Open settings"
               className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full active:bg-gray-100">
               <IonIcon icon={menuOutline} aria-hidden="true" />
-            </button>
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-3 mb-4">
             <Avatar src={user.photoURL} name={user.displayName} size="lg" />

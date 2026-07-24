@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
-import { cartOutline, imageOutline } from 'ionicons/icons';
+import { cartOutline, imageOutline, briefcaseOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
@@ -33,7 +33,14 @@ const MarketplacePage: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-black">WILDE MARKET</h1>
-            <IonIcon icon={cartOutline} aria-hidden="true" className="text-xl" />
+            <div className="flex items-center gap-1">
+              <button onClick={() => history.push(ROUTES.JOBS)}
+                aria-label="Creative Jobs"
+                className="min-w-11 min-h-11 flex items-center justify-center rounded-full active:bg-gray-100">
+                <IonIcon icon={briefcaseOutline} aria-hidden="true" className="text-xl" />
+              </button>
+              <IonIcon icon={cartOutline} aria-hidden="true" className="text-xl" />
+            </div>
           </div>
           <div className="flex gap-2 border-b border-wilde-border pb-3 mb-4">
             {TABS.map(t => (

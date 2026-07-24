@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   addDoc,
   increment,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -34,6 +35,7 @@ export const Collections = {
   PROMPTS:              'Prompts',
   PAYMENTS:             'Payments',
   JOBS:                 'Jobs',
+  JOB_APPLICATIONS:     'JobApplications',
   NOTIFICATIONS:        'Notifications',
 } as const;
 
@@ -65,6 +67,15 @@ export const queryDocuments = async <T>(
   const q = query(collection(db, col), ...constraints);
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as T));
+};
+
+export const subscribeToQuery = <T>(
+  col: string,
+  constraints: QueryConstraint[],
+  onData: (docs: T[]) => void
+) => {
+  const q = query(collection(db, col), ...constraints);
+  return onSnapshot(q, snap => onData(snap.docs.map(d => ({ id: d.id, ...d.data() } as T))));
 };
 
 export { where, orderBy, limit, increment };
