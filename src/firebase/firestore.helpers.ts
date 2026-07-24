@@ -14,6 +14,7 @@ import {
   DocumentData,
   serverTimestamp,
   addDoc,
+  increment,
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -66,4 +67,4 @@ export const queryDocuments = async <T>(
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as T));
 };
 
-export { where, orderBy, limit };
+export { where, orderBy, limit, increment };

@@ -3,6 +3,7 @@ import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useCreatorProfile } from '@/features/profile/hooks/useCreatorProfile';
+import { useAuthStore } from '@/store/slices/authStore';
 import Avatar from '@/components/ui/Avatar';
 import WorkCard from '@/components/ui/WorkCard';
 import { formatCount } from '@/utils';
@@ -12,8 +13,10 @@ const TABS = ['Portfolio', 'About', 'Reviews'];
 const CreatorProfilePage: React.FC = () => {
   const { uid } = useParams<{ uid: string }>();
   const history = useHistory();
+  const { user } = useAuthStore();
   const [tab, setTab] = useState('Portfolio');
   const { creator, works, follow, isFollowing } = useCreatorProfile(uid);
+  const isOwnProfile = user?.uid === uid;
 
   if (!creator) return null;
 
@@ -35,16 +38,18 @@ const CreatorProfilePage: React.FC = () => {
               <span>Following <strong>{formatCount(creator.followingCount)}</strong></span>
             </div>
           </div>
-          <div className="flex gap-2 mb-4">
-            <button onClick={() => follow()}
-              className={'flex-1 rounded-lg py-2 text-sm font-medium ' +
-                (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
-            <button className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium">
-              Hire
-            </button>
-          </div>
+          {!isOwnProfile && (
+            <div className="flex gap-2 mb-4">
+              <button onClick={() => follow()}
+                className={'flex-1 rounded-lg py-2 text-sm font-medium ' +
+                  (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
+                {isFollowing ? 'Following' : 'Follow'}
+              </button>
+              <button className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium">
+                Hire
+              </button>
+            </div>
+          )}
           <div className="flex border-b border-wilde-border mb-4">
             {TABS.map(t => (
               <button key={t}

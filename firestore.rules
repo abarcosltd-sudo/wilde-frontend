@@ -5,9 +5,17 @@ service cloud.firestore {
     function isAuth()        { return request.auth != null; }
     function isOwner(uid)    { return isAuth() && request.auth.uid == uid; }
 
+    function isFollowerCountStep() {
+      return isAuth() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount', 'updatedAt']) &&
+        (request.resource.data.followersCount == resource.data.followersCount + 1 ||
+         request.resource.data.followersCount == resource.data.followersCount - 1);
+    }
+
     match /Users/{uid} {
-      allow read:  if true;
-      allow write: if isOwner(uid);
+      allow read:   if true;
+      allow create, delete: if isOwner(uid);
+      allow update: if isOwner(uid) || isFollowerCountStep();
     }
 
     match /Works/{workId} {

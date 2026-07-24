@@ -20,7 +20,6 @@ import ReadWorkPage from '@/pages/writing/ReadWorkPage';
 import CollaborationPage from '@/pages/writing/CollaborationPage';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import JobsPage from '@/pages/marketplace/JobsPage';
-import AiAssistantPage from '@/pages/main/AiAssistantPage';
 import NotificationsPage from '@/pages/main/NotificationsPage';
 import ProfileDashPage from '@/pages/profile/ProfileDashPage';
 import CreatorProfilePage from '@/pages/profile/CreatorProfilePage';
@@ -46,7 +45,6 @@ const AppRouter: React.FC = () => (
             <Route exact path={ROUTES.WRITING_STUDIO} component={WritingStudioPage} />
             <Route exact path={ROUTES.READ_WORK}      component={ReadWorkPage} />
             <Route exact path={ROUTES.COLLABORATION}  component={CollaborationPage} />
-            <Route exact path={ROUTES.AI_ASSISTANT}   component={AiAssistantPage} />
             <Route exact path={ROUTES.JOBS}           component={JobsPage} />
             <Route exact path={ROUTES.NOTIFICATIONS}  component={NotificationsPage} />
             <Route exact path={ROUTES.SETTINGS}       component={SettingsPage} />
