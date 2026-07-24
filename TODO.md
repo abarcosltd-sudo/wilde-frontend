@@ -11,17 +11,28 @@ work top to bottom within each group. Each item names the files involved.
   `completed` Order directly with no payment provider involved. Used by both
   `MarketplacePage.tsx` and `ReadWorkPage.tsx`. `src/services/payment.service.ts`
   (`initiatePayment`/`verifyPayment`) exists but is never called.
-- [ ] **Google sign-in never creates a Firestore user profile** —
-  `src/firebase/auth.helpers.ts` (`signInWithPopup`) + `src/features/auth/hooks/useAuth.ts`.
-  New Google users get a null app-level `user` forever, silently breaking Home,
-  Profile, and Onboarding.
-- [ ] **Real Profile Analytics** — `src/features/profile/hooks/useProfileDash.ts`
-  hardcodes views/engagement/revenue for every user.
-- [ ] **Notifications can't be marked read** — `src/features/notifications/services/notifications.service.ts`
-  (`markNotificationRead`) is never called; no tap handler in `NotificationsPage.tsx`.
+- [x] **Google sign-in never creates a Firestore user profile** — fixed in
+  `src/features/auth/hooks/useAuth.ts`: auto-provisions a `Users` doc for any
+  non-password provider on first sign-in.
+- [x] **Real Profile Analytics** — `src/features/profile/hooks/useProfileDash.ts`
+  now aggregates real `viewCount`/`likeCount` across the user's own Works and
+  shows the real `totalSales` field, instead of hardcoded numbers.
+- [x] **Notifications can't be marked read** — `useNotifications.ts` now scopes
+  the query to `where('userId', '==', user.uid)` (previously unscoped — would
+  have been rejected by Firestore rules or leaked other users' notifications)
+  and adds a real `markAsRead`, wired to a tap handler + unread dot in
+  `NotificationsPage.tsx`.
+  - **Follow-up found while fixing this**: `firestore.rules` has no `allow create`
+    rule for `/Notifications/{notifId}` at all, and no code path in the app
+    creates a Notification document anywhere (e.g. on follow, on publish, on
+    purchase). The list will stay empty for everyone until both a create rule
+    and the actual notification-creation calls are added.
 
 ## Medium priority — engagement / retention
 
+- [ ] **Nothing ever creates a Notification** — needs an `allow create` rule on
+  `/Notifications/{notifId}` in `firestore.rules` plus actual write calls on
+  real events (new follower, published work, purchase, etc.). See note above.
 - [ ] **Wire up Streaks** — `src/features/streaks/hooks/useStreaks.ts` and
   `src/components/ui/StreakBadge.tsx` are fully built but never rendered anywhere.
 - [ ] **Jobs: make reachable + real Apply** — no nav/link anywhere points to `/app/jobs`;
