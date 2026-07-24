@@ -14,11 +14,14 @@ export const useWorkEditor = (workId: string) => {
   const save = useCallback(async (status: 'draft' | 'published') => {
     if (!currentWork) return;
     setSaving(true);
-    await updateDocument(Collections.WORKS, workId, {
-      content: currentWork.content,
+    const payload: Record<string, unknown> = {
+      content: currentWork.content ?? '',
       title:   currentWork.title,
       status,
-    });
+    };
+    if (currentWork.coverImageUrl) payload.coverImageUrl = currentWork.coverImageUrl;
+    if (currentWork.collaborators) payload.collaborators = currentWork.collaborators;
+    await updateDocument(Collections.WORKS, workId, payload);
     setSaving(false);
   }, [currentWork, workId]);
 

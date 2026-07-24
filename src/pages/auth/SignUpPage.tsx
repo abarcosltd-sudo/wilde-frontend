@@ -6,7 +6,7 @@ import { createDocument } from '@/firebase/firestore.helpers';
 import { ROUTES } from '@/constants';
 import { Collections } from '@/firebase/firestore.helpers';
 import Button from '@/components/ui/Button';
-import Swal from 'sweetalert2';
+import Swal from '@/utils/swal';
 
 const SignUpPage: React.FC = () => {
   const history = useHistory();
