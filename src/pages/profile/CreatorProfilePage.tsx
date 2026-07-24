@@ -45,9 +45,10 @@ const CreatorProfilePage: React.FC = () => {
                   (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
-              <button className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium">
+              <a href={`mailto:${creator.email}?subject=${encodeURIComponent(`Work opportunity via WILDE`)}`}
+                className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium text-center">
                 Hire
-              </button>
+              </a>
             </div>
           )}
           <div className="flex border-b border-wilde-border mb-4">

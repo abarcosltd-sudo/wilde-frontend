@@ -3,7 +3,7 @@ import {
   IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, IonSpinner,
 } from '@ionic/react';
 import {
-  chevronBackOutline, ellipsisHorizontalOutline,
+  chevronBackOutline,
   listOutline, ellipsisVerticalOutline, swapHorizontalOutline, imageOutline, sparklesOutline,
 } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
@@ -145,10 +145,6 @@ const WritingStudioPage: React.FC = () => {
               aria-label="AI Prompt"
               className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full active:bg-gray-100 shrink-0">
               <IonIcon icon={sparklesOutline} aria-hidden="true" />
-            </button>
-            <button aria-label="More options"
-              className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full active:bg-gray-100 shrink-0">
-              <IonIcon icon={ellipsisHorizontalOutline} aria-hidden="true" />
             </button>
           </div>
           {config.showToolbar && (

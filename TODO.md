@@ -82,11 +82,14 @@ work top to bottom within each group. Each item names the files involved.
 - [ ] **Writing Studio rich-text toolbar is decorative** — Bold/Italic/Underline/List/
   Align buttons in `WritingStudioPage.tsx` (`TOOLBAR_BUTTONS`) have no handlers;
   the editor is a plain `<textarea>`.
-- [ ] **Dead no-op buttons** — wire up or remove: Home "See all" (`HomePage.tsx`),
-  Marketplace "Hire" (`MarketplacePage.tsx`), Creator Profile "Hire"
-  (`CreatorProfilePage.tsx`), Profile "This Month ›" (`ProfileDashPage.tsx`),
-  Writing Studio "⋮ More options", Collaboration "⋮". (Collaboration's
-  "Invite" is now wired — see above.)
+- [x] **Dead no-op buttons** — Home "See all" now navigates to Explore;
+  Marketplace and Creator Profile "Hire" now open a `mailto:` link to the
+  provider/creator's email (no messaging system exists to build a real hire
+  flow against, so this is the honest option rather than a fake action);
+  Profile's "This Month ›" was inaccurate (Analytics isn't month-scoped) so
+  it's now a plain "All Time" label; removed Writing Studio's and
+  Collaboration's "⋮ More options" (no defined destination — a dead button
+  promising a menu that doesn't exist is worse than no button).
 
 ## Lower priority — larger features / cleanup
 

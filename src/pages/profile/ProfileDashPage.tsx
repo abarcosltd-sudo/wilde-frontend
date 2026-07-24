@@ -63,7 +63,7 @@ const ProfileDashPage: React.FC = () => {
           <div className="border-t border-wilde-border pt-4">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-sm font-bold">Analytics</h3>
-              <span className="text-xs text-wilde-muted">This Month ›</span>
+              <span className="text-xs text-wilde-muted">All Time</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">

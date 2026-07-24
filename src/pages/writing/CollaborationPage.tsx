@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
-import { chevronBackOutline, ellipsisHorizontalOutline, sendOutline } from 'ionicons/icons';
+import { chevronBackOutline, sendOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useCollaboration } from '@/features/collaboration/hooks/useCollaboration';
 import { useAuthStore } from '@/store/slices/authStore';
@@ -36,10 +36,7 @@ const CollaborationPage: React.FC = () => {
               <IonIcon icon={chevronBackOutline} aria-hidden="true" />
             </button>
             <h2 className="font-bold">{work?.title}</h2>
-            <button aria-label="More options"
-              className="min-w-11 min-h-11 flex items-center justify-center rounded-full active:bg-gray-100">
-              <IonIcon icon={ellipsisHorizontalOutline} aria-hidden="true" />
-            </button>
+            <span className="min-w-11" />
           </div>
           <div className="flex items-center justify-between px-4 py-2 border-b border-wilde-border">
             <div className="flex gap-3">

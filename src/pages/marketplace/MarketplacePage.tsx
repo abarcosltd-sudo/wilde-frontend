@@ -21,6 +21,29 @@ const AuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
   return <>{author?.displayName ?? '…'}</>;
 };
 
+const HireButton: React.FC<{ userId: string; serviceTitle: string }> = ({ userId, serviceTitle }) => {
+  const [provider, setProvider] = useState<User | null>(null);
+
+  useEffect(() => {
+    getDocument<User>(Collections.USERS, userId).then(setProvider);
+  }, [userId]);
+
+  if (!provider?.email) {
+    return (
+      <button disabled className="text-xs border border-wilde-border text-wilde-muted rounded-md px-3 py-1.5">
+        Hire
+      </button>
+    );
+  }
+
+  return (
+    <a href={`mailto:${provider.email}?subject=${encodeURIComponent(`Inquiry: ${serviceTitle}`)}`}
+      className="text-xs border border-wilde-black rounded-md px-3 py-1.5">
+      Hire
+    </a>
+  );
+};
+
 const MarketplacePage: React.FC = () => {
   const [tab, setTab] = useState('Featured');
   const { works, listings } = useMarketplace(tab);
@@ -86,7 +109,7 @@ const MarketplacePage: React.FC = () => {
                     <p className="text-sm font-bold">{l.title}</p>
                     <p className="text-xs text-wilde-muted">{formatCurrency(l.pricePerProject, l.currency)} / project</p>
                   </div>
-                  <button className="text-xs border border-wilde-black rounded-md px-3 py-1.5">Hire</button>
+                  <HireButton userId={l.userId} serviceTitle={l.title} />
                 </div>
               ))}
             </>
