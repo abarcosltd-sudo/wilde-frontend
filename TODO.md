@@ -7,39 +7,108 @@ work top to bottom within each group. Each item names the files involved.
 
 - [ ] **Real AI Prompt generation** — `src/features/ai-assistant/hooks/useAiPrompts.ts`
   always returns a templated sentence, never calls a real model.
+  **On hold (2026-07-24): needs a decision on how it should call a model** —
+  either wire it to `wilde-backend.onrender.com`'s `/api/ai/generate` (if that
+  endpoint actually exists) or add a minimal proxy so an LLM API key is never
+  shipped to the browser. Do not put a raw API key in frontend code.
 - [ ] **Real payments** — `src/features/marketplace/hooks/useBuyWork.ts` writes a
   `completed` Order directly with no payment provider involved. Used by both
   `MarketplacePage.tsx` and `ReadWorkPage.tsx`. `src/services/payment.service.ts`
   (`initiatePayment`/`verifyPayment`) exists but is never called.
-- [ ] **Google sign-in never creates a Firestore user profile** —
-  `src/firebase/auth.helpers.ts` (`signInWithPopup`) + `src/features/auth/hooks/useAuth.ts`.
-  New Google users get a null app-level `user` forever, silently breaking Home,
-  Profile, and Onboarding.
-- [ ] **Real Profile Analytics** — `src/features/profile/hooks/useProfileDash.ts`
-  hardcodes views/engagement/revenue for every user.
-- [ ] **Notifications can't be marked read** — `src/features/notifications/services/notifications.service.ts`
-  (`markNotificationRead`) is never called; no tap handler in `NotificationsPage.tsx`.
+  **On hold (2026-07-24): the backend's Paystack/Flutterwave integration isn't
+  built yet.** Needs backend work (provider keys, webhook verification) before
+  the frontend can be wired to anything real.
+- [x] **Google sign-in never creates a Firestore user profile** — fixed in
+  `src/features/auth/hooks/useAuth.ts`: auto-provisions a `Users` doc for any
+  non-password provider on first sign-in.
+- [x] **Real Profile Analytics** — `src/features/profile/hooks/useProfileDash.ts`
+  now aggregates real `viewCount`/`likeCount` across the user's own Works and
+  shows the real `totalSales` field, instead of hardcoded numbers.
+- [x] **Notifications can't be marked read** — `useNotifications.ts` now scopes
+  the query to `where('userId', '==', user.uid)` (previously unscoped — would
+  have been rejected by Firestore rules or leaked other users' notifications)
+  and adds a real `markAsRead`, wired to a tap handler + unread dot in
+  `NotificationsPage.tsx`.
+  - **Follow-up found while fixing this**: `firestore.rules` has no `allow create`
+    rule for `/Notifications/{notifId}` at all, and no code path in the app
+    creates a Notification document anywhere (e.g. on follow, on publish, on
+    purchase). The list will stay empty for everyone until both a create rule
+    and the actual notification-creation calls are added.
 
 ## Medium priority — engagement / retention
 
-- [ ] **Wire up Streaks** — `src/features/streaks/hooks/useStreaks.ts` and
-  `src/components/ui/StreakBadge.tsx` are fully built but never rendered anywhere.
-- [ ] **Jobs: make reachable + real Apply** — no nav/link anywhere points to `/app/jobs`;
-  `useJobs.ts`'s `apply()` is a no-op stub. No "Post a Job" UI exists either.
-- [ ] **Collaboration screen is mostly fake** — `src/pages/writing/CollaborationPage.tsx`
-  + `src/features/collaboration/hooks/useCollaboration.ts`: `addComment` is a no-op,
-  collaborators list never populates, message body and "Someone is typing…" are
-  static fake content, no real-time sync. Also unreachable from any UI (Writing
-  Studio's "Collaborate" button opens the invite modal instead).
-- [ ] **Reviews tab** — `src/pages/profile/CreatorProfilePage.tsx` hardcodes
-  "No reviews yet"; no review data model or submission flow exists.
-- [ ] **Writing Studio rich-text toolbar is decorative** — Bold/Italic/Underline/List/
-  Align buttons in `WritingStudioPage.tsx` (`TOOLBAR_BUTTONS`) have no handlers;
-  the editor is a plain `<textarea>`.
-- [ ] **Dead no-op buttons** — wire up or remove: Home "See all" (`HomePage.tsx`),
-  Marketplace "Hire" (`MarketplacePage.tsx`), Creator Profile "Hire"
-  (`CreatorProfilePage.tsx`), Profile "This Month ›" (`ProfileDashPage.tsx`),
-  Writing Studio "⋮ More options", Collaboration "Invite" and "⋮".
+- [x] **Nothing ever creates a Notification** — added `allow create` rule on
+  `/Notifications/{notifId}` (needs deploy, see below) and real writes on:
+  new follower (`useCreatorProfile.ts`), purchase (`useBuyWork.ts`), published
+  work → each follower (`useWorkEditor.ts`). Via a shared `features/notifications/notify.ts`.
+- [x] **Wire up Streaks** — `useStreaks.ts` now creates the doc on first write
+  and computes real day-based streak math (same-day no-op, consecutive-day
+  increment, gap resets to 1); `logWrite()` is called from `useWorkEditor.save()`;
+  `StreakBadge` now renders on `ProfileDashPage`.
+- [x] **Jobs: make reachable + real Apply** — added a briefcase icon on
+  `MarketplacePage` linking to `/app/jobs`; `apply()` now writes a real
+  `JobApplications` doc (new collection, needs a rules deploy, see below) and
+  the button shows "Applied" once you have. Also added a minimal "Post a Job"
+  modal since there was no way to create one at all.
+- [x] **Collaboration screen is mostly fake** — `addComment` now writes real
+  Comments with a live `onSnapshot` listener (see index note below); collaborators
+  list is now populated from `work.collaborators`; real `work.content` shown
+  instead of fake filler text; removed the permanently-fake "Someone is
+  typing…" and "Online" indicators (no presence system exists — better to
+  remove than fake it); "Invite" now opens the real `CollaboratorPickerModal`,
+  gated to the work's author. Made it reachable: the collaborator row in
+  `WritingStudioPage` now links to `/app/collab/:workId`.
+  - **Found while fixing this**: the Comments query (`where('postId') + orderBy('createdAt')`)
+    needs a Firestore composite index that was never created — this was
+    already broken before my changes, just never exercised since comments were
+    never created. Fixed by sorting client-side instead of adding another
+    required index.
+  - **Found while fixing this**: `createdAt` fields are written via
+    `serverTimestamp()` (a Firestore `Timestamp` object) but typed as `string`
+    and passed straight into `new Date(...)`/`formatTimeAgo` everywhere. Worked
+    around it locally for comment sorting; **this is a systemic issue across
+    the whole app** (Notifications, Works, Jobs, everything with a
+    `createdAt`) and needs its own pass — see new item below.
+- [ ] **`createdAt`/`updatedAt` are Firestore Timestamps, not strings** — every
+  `User`/`Work`/`Comment`/etc. type declares `createdAt: string`, and
+  `formatTimeAgo`/`formatDate` (`src/utils/format.ts`) call `new Date(dateStr)`
+  on them directly. A Firestore `Timestamp` object passed to `new Date()`
+  produces `Invalid Date`. Likely already silently broken anywhere a
+  freshly-created document's timestamp is displayed. Needs either converting
+  on read (`.toDate().toISOString()`) or updating the format helpers to accept
+  a Timestamp.
+- [x] **Reviews tab** — added a `Reviews` collection (`Review` type in
+  `marketplace.types.ts`) gated to buyers with a completed `Order` for that
+  creator (`useReviews.ts`); `CreatorProfilePage` now shows a star-rating
+  summary, a review list, and a "Leave a review" form when eligible. Needs a
+  `firestore.rules` deploy (new `Reviews` collection, create-only, reviewer
+  must match `auth.uid` — no server-side purchase re-verification, consistent
+  with this app's existing trust level elsewhere).
+- [x] **Writing Studio rich-text toolbar is decorative** — replaced the plain
+  `<textarea>` with a real `contentEditable`-based editor
+  (`src/components/ui/RichTextEditor.tsx`) for `short_story`/`long_work`
+  (the two types that show the toolbar); Bold/Italic/Underline/Strikethrough/
+  List/Align now apply real formatting via `document.execCommand`. Content
+  for those types is now sanitized HTML (`src/utils/richText.ts`, using
+  `dompurify` — new dependency) instead of plain text; `ReadWorkPage` and
+  `CollaborationPage` render it with `dangerouslySetInnerHTML` after
+  sanitizing. The paywall preview truncation in `ReadWorkPage` used to
+  `.slice()` the raw string, which would have cut HTML mid-tag — replaced
+  with `truncateHtml()`, a DOM-walking truncator that keeps the markup valid.
+  Poetry/screenplay/playlet/artwork are untouched (still plain `<textarea>`,
+  matching their monospace/plain-text intent).
+  - **Known limitation**: uses `document.execCommand`, which is deprecated
+    (though still supported by all major browsers). A production-grade
+    replacement would move to a maintained editor library (TipTap/Lexical),
+    which is a much larger change than this pass warranted.
+- [x] **Dead no-op buttons** — Home "See all" now navigates to Explore;
+  Marketplace and Creator Profile "Hire" now open a `mailto:` link to the
+  provider/creator's email (no messaging system exists to build a real hire
+  flow against, so this is the honest option rather than a fake action);
+  Profile's "This Month ›" was inaccurate (Analytics isn't month-scoped) so
+  it's now a plain "All Time" label; removed Writing Studio's and
+  Collaboration's "⋮ More options" (no defined destination — a dead button
+  promising a menu that doesn't exist is worse than no button).
 
 ## Lower priority — larger features / cleanup
 

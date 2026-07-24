@@ -8,7 +8,7 @@ import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { Work, User } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
-import { formatCurrency } from '@/utils';
+import { formatCurrency, sanitizeHtml, truncateHtml } from '@/utils';
 
 const PREVIEW_RATIO = 0.5;
 
@@ -51,7 +51,9 @@ const ReadWorkPage: React.FC = () => {
   const isOwner = !!user && work?.authorId === user.id;
   const isPaywalled = !!work && (work.price ?? 0) > 0 && !isOwner && !hasPurchased;
   const content = work?.content ?? '';
-  const visibleContent = isPaywalled ? content.slice(0, Math.floor(content.length * PREVIEW_RATIO)) : content;
+  const visibleHtml = isPaywalled
+    ? truncateHtml(content, Math.floor(content.length * PREVIEW_RATIO))
+    : sanitizeHtml(content);
 
   const handleBuy = async () => {
     if (!work) return;
@@ -92,7 +94,8 @@ const ReadWorkPage: React.FC = () => {
                 <img src={work.coverImageUrl} alt={work.title}
                   className="w-full rounded-lg mb-4 object-cover max-h-72" />
               )}
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{visibleContent}</p>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap rich-text-content"
+                dangerouslySetInnerHTML={{ __html: visibleHtml }} />
 
               {isPaywalled && (
                 <div className="relative -mt-20 pt-20 bg-gradient-to-t from-white via-white to-transparent">

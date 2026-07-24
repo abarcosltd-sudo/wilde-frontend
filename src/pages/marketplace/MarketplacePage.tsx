@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
-import { cartOutline, imageOutline } from 'ionicons/icons';
+import { cartOutline, imageOutline, briefcaseOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
@@ -21,6 +21,29 @@ const AuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
   return <>{author?.displayName ?? '…'}</>;
 };
 
+const HireButton: React.FC<{ userId: string; serviceTitle: string }> = ({ userId, serviceTitle }) => {
+  const [provider, setProvider] = useState<User | null>(null);
+
+  useEffect(() => {
+    getDocument<User>(Collections.USERS, userId).then(setProvider);
+  }, [userId]);
+
+  if (!provider?.email) {
+    return (
+      <button disabled className="text-xs border border-wilde-border text-wilde-muted rounded-md px-3 py-1.5">
+        Hire
+      </button>
+    );
+  }
+
+  return (
+    <a href={`mailto:${provider.email}?subject=${encodeURIComponent(`Inquiry: ${serviceTitle}`)}`}
+      className="text-xs border border-wilde-black rounded-md px-3 py-1.5">
+      Hire
+    </a>
+  );
+};
+
 const MarketplacePage: React.FC = () => {
   const [tab, setTab] = useState('Featured');
   const { works, listings } = useMarketplace(tab);
@@ -33,7 +56,14 @@ const MarketplacePage: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-black">WILDE MARKET</h1>
-            <IonIcon icon={cartOutline} aria-hidden="true" className="text-xl" />
+            <div className="flex items-center gap-1">
+              <button onClick={() => history.push(ROUTES.JOBS)}
+                aria-label="Creative Jobs"
+                className="min-w-11 min-h-11 flex items-center justify-center rounded-full active:bg-gray-100">
+                <IonIcon icon={briefcaseOutline} aria-hidden="true" className="text-xl" />
+              </button>
+              <IonIcon icon={cartOutline} aria-hidden="true" className="text-xl" />
+            </div>
           </div>
           <div className="flex gap-2 border-b border-wilde-border pb-3 mb-4">
             {TABS.map(t => (
@@ -79,7 +109,7 @@ const MarketplacePage: React.FC = () => {
                     <p className="text-sm font-bold">{l.title}</p>
                     <p className="text-xs text-wilde-muted">{formatCurrency(l.pricePerProject, l.currency)} / project</p>
                   </div>
-                  <button className="text-xs border border-wilde-black rounded-md px-3 py-1.5">Hire</button>
+                  <HireButton userId={l.userId} serviceTitle={l.title} />
                 </div>
               ))}
             </>

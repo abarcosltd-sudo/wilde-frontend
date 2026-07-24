@@ -40,7 +40,8 @@ const HomePage: React.FC = () => {
           <section>
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-bold text-sm">Trending Creatives</h2>
-              <button className="text-xs text-wilde-muted underline">See all</button>
+              <button onClick={() => history.push(ROUTES.EXPLORE)}
+                className="text-xs text-wilde-muted underline">See all</button>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {trending.map(creator => (

@@ -87,7 +87,8 @@ service cloud.firestore {
     }
 
     match /Notifications/{notifId} {
-      allow read: if isAuth() && request.auth.uid == resource.data.userId;
+      allow read:   if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth();
       allow update: if isAuth() && request.auth.uid == resource.data.userId;
     }
 
@@ -97,8 +98,18 @@ service cloud.firestore {
       allow update, delete: if isAuth() && request.auth.uid == resource.data.posterId;
     }
 
+    match /JobApplications/{applicationId} {
+      allow read:   if true;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.applicantId;
+    }
+
     match /Payments/{paymentId} {
       allow read: if isAuth() && request.auth.uid == resource.data.userId;
+    }
+
+    match /Reviews/{reviewId} {
+      allow read:   if true;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.reviewerId;
     }
   }
 }

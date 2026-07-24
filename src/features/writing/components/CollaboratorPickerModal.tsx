@@ -52,7 +52,7 @@ const CollaboratorPickerModal: React.FC<Props> = ({ isOpen, onClose, initialSele
           <h2 className="font-bold">Invite Collaborators</h2>
           <span className="min-w-11" />
         </div>
-        <IonSearchbar value={query} onIonChange={e => setQuery(e.detail.value ?? '')}
+        <IonSearchbar value={query} onIonInput={e => setQuery(e.detail.value ?? '')}
           placeholder="Search people…" className="mb-2 p-0" />
         <div className="overflow-y-auto" style={{ maxHeight: '50vh' }}>
           {filtered.map(u => (

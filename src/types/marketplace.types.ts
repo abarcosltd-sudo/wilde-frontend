@@ -29,6 +29,16 @@ export interface Order {
   updatedAt: string;
 }
 
+export interface Review {
+  id: string;
+  creatorId: string;
+  reviewerId: string;
+  orderId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface Job {
   id: string;
   posterId: string;

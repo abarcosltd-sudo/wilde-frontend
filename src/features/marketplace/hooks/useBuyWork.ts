@@ -3,6 +3,7 @@ import { createDocument, Collections } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
 import { Work } from '@/types';
 import { formatCurrency } from '@/utils';
+import { notify } from '@/features/notifications/notify';
 import Swal from '@/utils/swal';
 
 // TODO: replace with a real purchase via payment.service.ts (initiatePayment)
@@ -35,6 +36,7 @@ export const useBuyWork = () => {
         currency: work.currency ?? 'NGN',
         status: 'completed',
       });
+      notify(work.authorId, '💰', `${user.displayName} purchased "${work.title}"`).catch(() => {});
       await Swal.fire({
         icon: 'success',
         title: 'Purchase complete!',
