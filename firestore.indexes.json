@@ -17,6 +17,22 @@
       ]
     },
     {
+      "collectionGroup": "Works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type",      "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Works",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "price",  "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "Posts",
       "queryScope": "COLLECTION",
       "fields": [
