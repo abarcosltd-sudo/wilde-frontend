@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { cartOutline, imageOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
+import { getDocument, Collections } from '@/firebase/firestore.helpers';
 import { ROUTES } from '@/constants';
 import { formatCurrency } from '@/utils';
+import { User } from '@/types';
 
 const TABS = ['Featured', 'Books', 'Art', 'Services'];
+
+const AuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
+  const [author, setAuthor] = useState<User | null>(null);
+
+  useEffect(() => {
+    getDocument<User>(Collections.USERS, authorId).then(setAuthor);
+  }, [authorId]);
+
+  return <>{author?.displayName ?? '…'}</>;
+};
 
 const MarketplacePage: React.FC = () => {
   const [tab, setTab] = useState('Featured');
@@ -45,7 +57,7 @@ const MarketplacePage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-bold">{w.title}</p>
-                      <p className="text-xs text-wilde-muted">by {w.authorId}</p>
+                      <p className="text-xs text-wilde-muted">by <AuthorName authorId={w.authorId} /></p>
                       <p className="text-sm font-bold">{formatCurrency(w.price ?? 0, w.currency)}</p>
                     </div>
                   </button>

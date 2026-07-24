@@ -22,7 +22,7 @@ const ExplorePage: React.FC = () => {
       <IonContent>
         <div className="p-4">
           <h1 className="font-bold text-lg mb-3">Explore</h1>
-          <IonSearchbar value={query} onIonChange={e => setQuery(e.detail.value ?? '')}
+          <IonSearchbar value={query} onIonInput={e => setQuery(e.detail.value ?? '')}
             placeholder="Search creators, works..." className="mb-3 p-0" />
           <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
             {TABS.map(tab => (
