@@ -7,10 +7,17 @@ work top to bottom within each group. Each item names the files involved.
 
 - [ ] **Real AI Prompt generation** — `src/features/ai-assistant/hooks/useAiPrompts.ts`
   always returns a templated sentence, never calls a real model.
+  **On hold (2026-07-24): needs a decision on how it should call a model** —
+  either wire it to `wilde-backend.onrender.com`'s `/api/ai/generate` (if that
+  endpoint actually exists) or add a minimal proxy so an LLM API key is never
+  shipped to the browser. Do not put a raw API key in frontend code.
 - [ ] **Real payments** — `src/features/marketplace/hooks/useBuyWork.ts` writes a
   `completed` Order directly with no payment provider involved. Used by both
   `MarketplacePage.tsx` and `ReadWorkPage.tsx`. `src/services/payment.service.ts`
   (`initiatePayment`/`verifyPayment`) exists but is never called.
+  **On hold (2026-07-24): the backend's Paystack/Flutterwave integration isn't
+  built yet.** Needs backend work (provider keys, webhook verification) before
+  the frontend can be wired to anything real.
 - [x] **Google sign-in never creates a Firestore user profile** — fixed in
   `src/features/auth/hooks/useAuth.ts`: auto-provisions a `Users` doc for any
   non-password provider on first sign-in.
