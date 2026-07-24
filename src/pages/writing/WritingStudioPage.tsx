@@ -4,7 +4,7 @@ import {
 } from '@ionic/react';
 import {
   chevronBackOutline, ellipsisHorizontalOutline,
-  listOutline, ellipsisVerticalOutline, swapHorizontalOutline, imageOutline,
+  listOutline, ellipsisVerticalOutline, swapHorizontalOutline, imageOutline, sparklesOutline,
 } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWritingStore } from '@/store/slices/writingStore';
@@ -17,6 +17,7 @@ import { User, WorkType } from '@/types';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
+import AiPromptModal from '@/features/ai-assistant/components/AiPromptModal';
 import Swal from '@/utils/swal';
 
 const TOOLBAR_BUTTONS = [
@@ -49,6 +50,7 @@ const WritingStudioPage: React.FC = () => {
   const { currentWork, updateContent, updateTitle, setCoverImage, setCollaborators, isSaving } = useWritingStore();
   const { load, save, publish } = useWorkEditor(workId);
   const [isPickerOpen, setPickerOpen] = useState(false);
+  const [isAiPromptOpen, setAiPromptOpen] = useState(false);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState<User[]>([]);
   const [isUploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,12 +109,20 @@ const WritingStudioPage: React.FC = () => {
       confirmButtonText: 'Publish',
       cancelButtonText: 'Cancel',
     });
-    if (result.isConfirmed) await publish();
+    if (result.isConfirmed) {
+      await publish();
+      history.push(ROUTES.HOME);
+    }
   };
 
   const handleCollaboratorsSaved = (users: User[]) => {
     setCollaborators(users.map(u => u.id));
     setCollaboratorProfiles(users);
+  };
+
+  const handleInsertPrompt = (text: string) => {
+    const existing = currentWork?.content ?? '';
+    updateContent(existing ? `${existing}\n\n${text}` : text);
   };
 
   return (
@@ -131,6 +141,11 @@ const WritingStudioPage: React.FC = () => {
               aria-label="Work title"
               placeholder="Untitled"
               className="flex-1 min-w-0 text-center font-bold text-base bg-transparent focus:outline-none" />
+            <button onClick={() => setAiPromptOpen(true)}
+              aria-label="AI Prompt"
+              className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full active:bg-gray-100 shrink-0">
+              <IonIcon icon={sparklesOutline} aria-hidden="true" />
+            </button>
             <button aria-label="More options"
               className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full active:bg-gray-100 shrink-0">
               <IonIcon icon={ellipsisHorizontalOutline} aria-hidden="true" />
@@ -222,6 +237,12 @@ const WritingStudioPage: React.FC = () => {
         onClose={() => setPickerOpen(false)}
         initialSelectedIds={currentWork?.collaborators ?? []}
         onSave={handleCollaboratorsSaved} />
+
+      <AiPromptModal
+        isOpen={isAiPromptOpen}
+        onClose={() => setAiPromptOpen(false)}
+        workType={type}
+        onInsert={handleInsertPrompt} />
     </IonPage>
   );
 };

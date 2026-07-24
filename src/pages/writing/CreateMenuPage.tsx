@@ -2,7 +2,7 @@ import React from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import {
   createOutline, imagesOutline, filmOutline, ticketOutline,
-  pencilOutline, bookOutline, sparklesOutline, closeOutline, chevronForwardOutline,
+  pencilOutline, bookOutline, closeOutline, chevronForwardOutline,
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { ROUTES } from '@/constants';
@@ -56,14 +56,6 @@ const CreateMenuPage: React.FC = () => {
               <IonIcon icon={chevronForwardOutline} aria-hidden="true" className="text-gray-500" />
             </button>
           ))}
-          <button onClick={() => history.push(ROUTES.AI_ASSISTANT)}
-            className="flex items-center justify-between w-full py-4">
-            <div className="flex items-center gap-3">
-              <IonIcon icon={sparklesOutline} aria-hidden="true" className="text-lg" />
-              <span className="text-sm font-medium">AI Prompt</span>
-            </div>
-            <IonIcon icon={chevronForwardOutline} aria-hidden="true" className="text-gray-500" />
-          </button>
         </div>
       </IonContent>
     </IonPage>

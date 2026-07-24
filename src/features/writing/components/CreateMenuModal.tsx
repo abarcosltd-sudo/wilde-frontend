@@ -2,7 +2,7 @@ import React from 'react';
 import { IonModal, IonContent, IonIcon } from '@ionic/react';
 import {
   createOutline, filmOutline, ticketOutline, pencilOutline,
-  bookOutline, sparklesOutline, closeOutline, chevronForwardOutline,
+  bookOutline, closeOutline, chevronForwardOutline,
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { createDocument } from '@/firebase/firestore.helpers';
@@ -16,7 +16,6 @@ const OPTIONS = [
   { icon: ticketOutline,   label: 'Create Play',       type: 'playlet' },
   { icon: pencilOutline,   label: 'Write Poetry',      type: 'poetry' },
   { icon: bookOutline,     label: 'Long Work',         type: 'long_work' },
-  { icon: sparklesOutline, label: 'AI Prompt',         type: 'ai' },
 ];
 
 interface Props { isOpen: boolean; onClose: () => void; }
@@ -27,7 +26,6 @@ const CreateMenuModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const handleSelect = async (type: string) => {
     onClose();
-    if (type === 'ai') { history.push(ROUTES.AI_ASSISTANT); return; }
     if (!user) return;
     const id = await createDocument(Collections.WORKS, {
       authorId: user.uid, title: 'Untitled', type,
