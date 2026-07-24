@@ -44,8 +44,8 @@ const HomePage: React.FC = () => {
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2">
               {trending.map(creator => (
-                <button key={creator.uid}
-                  onClick={() => history.push(ROUTES.CREATOR_PROFILE.replace(':uid', creator.uid))}
+                <button key={creator.id}
+                  onClick={() => history.push(ROUTES.CREATOR_PROFILE.replace(':uid', creator.id))}
                   className="flex flex-col items-center gap-1 min-w-16">
                   <Avatar src={creator.photoURL} name={creator.displayName} size="lg" />
                   <span className="text-xs font-medium text-center leading-tight">{creator.displayName}</span>

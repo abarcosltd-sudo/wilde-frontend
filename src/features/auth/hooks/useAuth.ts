@@ -14,7 +14,7 @@ export const useAuth = () => {
       try {
         if (fbUser) {
           const profile = await getDocument<User>(Collections.USERS, fbUser.uid);
-          store.setUser(profile);
+          store.setUser(profile ? { ...profile, uid: fbUser.uid } : null);
         } else {
           store.clear();
         }

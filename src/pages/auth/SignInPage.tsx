@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom';
 import { signIn, signInWithGoogle } from '@/firebase/auth.helpers';
 import { ROUTES } from '@/constants';
 import Button from '@/components/ui/Button';
-import Swal from 'sweetalert2';
+import Swal from '@/utils/swal';
 
 const SignInPage: React.FC = () => {
   const history = useHistory();

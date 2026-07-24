@@ -8,6 +8,7 @@ export type CreativeRole =
   | 'other';
 
 export interface User {
+  id: string;
   uid: string;
   displayName: string;
   username: string;

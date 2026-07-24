@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { menuOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useProfileDash } from '@/features/profile/hooks/useProfileDash';
 import Avatar from '@/components/ui/Avatar';
+import EditProfileModal from '@/features/profile/components/EditProfileModal';
 import { formatCount, formatCurrency } from '@/utils';
 import { ROUTES } from '@/constants';
 
@@ -12,6 +13,7 @@ const ProfileDashPage: React.FC = () => {
   const { user } = useAuthStore();
   const { analytics } = useProfileDash();
   const history = useHistory();
+  const [isEditOpen, setEditOpen] = useState(false);
 
   if (!user) return null;
 
@@ -33,7 +35,8 @@ const ProfileDashPage: React.FC = () => {
               <p className="font-bold text-sm">{user.displayName}</p>
               <p className="text-xs text-wilde-muted">{user.roles.join(' · ')}</p>
             </div>
-            <button className="text-xs border border-wilde-border rounded-md px-3 py-1.5">
+            <button onClick={() => setEditOpen(true)}
+              className="text-xs border border-wilde-border rounded-md px-3 py-1.5">
               Edit Profile
             </button>
           </div>
@@ -73,6 +76,7 @@ const ProfileDashPage: React.FC = () => {
           </div>
         </div>
       </IonContent>
+      <EditProfileModal isOpen={isEditOpen} onClose={() => setEditOpen(false)} />
     </IonPage>
   );
 };
