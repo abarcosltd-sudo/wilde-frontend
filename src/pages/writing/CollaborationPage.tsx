@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/slices/authStore';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
 import Avatar from '@/components/ui/Avatar';
 import CommentAuthor from '@/features/collaboration/components/CommentAuthor';
+import { sanitizeHtml } from '@/utils';
 
 const CollaborationPage: React.FC = () => {
   const { workId } = useParams<{ workId: string }>();
@@ -58,9 +59,12 @@ const CollaborationPage: React.FC = () => {
             )}
           </div>
           <div className="flex-1 p-4 overflow-y-auto">
-            <div className="text-sm leading-relaxed text-wilde-muted mb-4 whitespace-pre-wrap">
-              {work?.content || 'No content yet.'}
-            </div>
+            {work?.content ? (
+              <div className="text-sm leading-relaxed text-wilde-muted mb-4 whitespace-pre-wrap rich-text-content"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(work.content) }} />
+            ) : (
+              <div className="text-sm leading-relaxed text-wilde-muted mb-4">No content yet.</div>
+            )}
             {comments.map(c => (
               <div key={c.id} className="border border-wilde-border rounded-lg p-3 mb-2 text-xs">
                 <p className="font-bold mb-1"><CommentAuthor authorId={c.authorId} /></p>

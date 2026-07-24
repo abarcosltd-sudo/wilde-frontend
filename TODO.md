@@ -84,9 +84,23 @@ work top to bottom within each group. Each item names the files involved.
   `firestore.rules` deploy (new `Reviews` collection, create-only, reviewer
   must match `auth.uid` — no server-side purchase re-verification, consistent
   with this app's existing trust level elsewhere).
-- [ ] **Writing Studio rich-text toolbar is decorative** — Bold/Italic/Underline/List/
-  Align buttons in `WritingStudioPage.tsx` (`TOOLBAR_BUTTONS`) have no handlers;
-  the editor is a plain `<textarea>`.
+- [x] **Writing Studio rich-text toolbar is decorative** — replaced the plain
+  `<textarea>` with a real `contentEditable`-based editor
+  (`src/components/ui/RichTextEditor.tsx`) for `short_story`/`long_work`
+  (the two types that show the toolbar); Bold/Italic/Underline/Strikethrough/
+  List/Align now apply real formatting via `document.execCommand`. Content
+  for those types is now sanitized HTML (`src/utils/richText.ts`, using
+  `dompurify` — new dependency) instead of plain text; `ReadWorkPage` and
+  `CollaborationPage` render it with `dangerouslySetInnerHTML` after
+  sanitizing. The paywall preview truncation in `ReadWorkPage` used to
+  `.slice()` the raw string, which would have cut HTML mid-tag — replaced
+  with `truncateHtml()`, a DOM-walking truncator that keeps the markup valid.
+  Poetry/screenplay/playlet/artwork are untouched (still plain `<textarea>`,
+  matching their monospace/plain-text intent).
+  - **Known limitation**: uses `document.execCommand`, which is deprecated
+    (though still supported by all major browsers). A production-grade
+    replacement would move to a maintained editor library (TipTap/Lexical),
+    which is a much larger change than this pass warranted.
 - [x] **Dead no-op buttons** — Home "See all" now navigates to Explore;
   Marketplace and Creator Profile "Hire" now open a `mailto:` link to the
   provider/creator's email (no messaging system exists to build a real hire

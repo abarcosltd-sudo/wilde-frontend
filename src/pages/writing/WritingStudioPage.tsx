@@ -4,7 +4,7 @@ import {
 } from '@ionic/react';
 import {
   chevronBackOutline,
-  listOutline, ellipsisVerticalOutline, swapHorizontalOutline, imageOutline, sparklesOutline,
+  listOutline, textOutline, swapHorizontalOutline, imageOutline, sparklesOutline,
 } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWritingStore } from '@/store/slices/writingStore';
@@ -16,18 +16,20 @@ import { ROUTES } from '@/constants';
 import { User, WorkType } from '@/types';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
+import RichTextEditor, { RichTextEditorHandle } from '@/components/ui/RichTextEditor';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
 import AiPromptModal from '@/features/ai-assistant/components/AiPromptModal';
 import Swal from '@/utils/swal';
 
 const TOOLBAR_BUTTONS = [
-  { key: 'bold', label: 'Bold', display: 'B' },
-  { key: 'italic', label: 'Italic', display: 'I' },
-  { key: 'underline', label: 'Underline', display: 'U' },
-  { key: 'list', label: 'Bulleted list', icon: listOutline },
-  { key: 'more', label: 'More formatting options', icon: ellipsisVerticalOutline },
-  { key: 'align', label: 'Text alignment', icon: swapHorizontalOutline },
+  { key: 'bold', label: 'Bold', display: 'B', command: 'bold' },
+  { key: 'italic', label: 'Italic', display: 'I', command: 'italic' },
+  { key: 'underline', label: 'Underline', display: 'U', command: 'underline' },
+  { key: 'list', label: 'Bulleted list', icon: listOutline, command: 'insertUnorderedList' },
+  { key: 'strike', label: 'Strikethrough', icon: textOutline, command: 'strikeThrough' },
 ] as const;
+
+const ALIGN_COMMANDS = ['justifyLeft', 'justifyCenter', 'justifyRight'] as const;
 
 const TYPE_CONFIG: Record<WorkType, {
   sectionLabel?: string;
@@ -53,7 +55,9 @@ const WritingStudioPage: React.FC = () => {
   const [isAiPromptOpen, setAiPromptOpen] = useState(false);
   const [collaboratorProfiles, setCollaboratorProfiles] = useState<User[]>([]);
   const [isUploadingImage, setUploadingImage] = useState(false);
+  const [alignIndex, setAlignIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<RichTextEditorHandle>(null);
 
   useEffect(() => { load(); }, [workId]);
 
@@ -122,7 +126,17 @@ const WritingStudioPage: React.FC = () => {
 
   const handleInsertPrompt = (text: string) => {
     const existing = currentWork?.content ?? '';
-    updateContent(existing ? `${existing}\n\n${text}` : text);
+    if (config.showToolbar) {
+      updateContent(existing + `<div>${text}</div>`);
+    } else {
+      updateContent(existing ? `${existing}\n\n${text}` : text);
+    }
+  };
+
+  const handleAlign = () => {
+    const nextIndex = (alignIndex + 1) % ALIGN_COMMANDS.length;
+    setAlignIndex(nextIndex);
+    editorRef.current?.exec(ALIGN_COMMANDS[nextIndex]);
   };
 
   return (
@@ -151,11 +165,17 @@ const WritingStudioPage: React.FC = () => {
             <div className="flex gap-2 px-4 py-2 border-t border-wilde-border">
               {TOOLBAR_BUTTONS.map(t => (
                 <button key={t.key}
+                  onClick={() => editorRef.current?.exec(t.command)}
                   aria-label={t.label}
                   className="min-w-11 min-h-9 flex items-center justify-center text-xs px-2 py-1 border border-wilde-border rounded">
                   {'display' in t ? t.display : <IonIcon icon={t.icon} aria-hidden="true" />}
                 </button>
               ))}
+              <button onClick={handleAlign}
+                aria-label="Text alignment"
+                className="min-w-11 min-h-9 flex items-center justify-center text-xs px-2 py-1 border border-wilde-border rounded">
+                <IonIcon icon={swapHorizontalOutline} aria-hidden="true" />
+              </button>
             </div>
           )}
           {collaboratorProfiles.length > 0 && (
@@ -197,15 +217,21 @@ const WritingStudioPage: React.FC = () => {
                 value={currentWork?.content ?? ''}
                 onChange={e => updateContent(e.target.value)} />
             </div>
-          ) : (
+          ) : config.showToolbar ? (
             <>
               {config.sectionLabel && <h3 className="font-bold text-sm mb-2">{config.sectionLabel}</h3>}
-              <textarea
-                className={`w-full h-full text-sm leading-relaxed resize-none focus:outline-none ${config.font}`}
+              <RichTextEditor ref={editorRef}
+                className={`w-full h-full text-sm leading-relaxed focus:outline-none ${config.font}`}
                 placeholder={config.placeholder}
                 value={currentWork?.content ?? ''}
-                onChange={e => updateContent(e.target.value)} />
+                onChange={updateContent} />
             </>
+          ) : (
+            <textarea
+              className={`w-full h-full text-sm leading-relaxed resize-none focus:outline-none ${config.font}`}
+              placeholder={config.placeholder}
+              value={currentWork?.content ?? ''}
+              onChange={e => updateContent(e.target.value)} />
           )}
         </div>
       </IonContent>
