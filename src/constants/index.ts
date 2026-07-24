@@ -33,6 +33,7 @@ export const ROUTES = {
   PROFILE:        '/app/profile',
   CREATOR_PROFILE:'/app/creator/:uid',
   WRITING_STUDIO: '/app/write/:workId',
+  READ_WORK:      '/app/read/:workId',
   AI_ASSISTANT:   '/app/ai',
   JOBS:           '/app/jobs',
   NOTIFICATIONS:  '/app/notifications',

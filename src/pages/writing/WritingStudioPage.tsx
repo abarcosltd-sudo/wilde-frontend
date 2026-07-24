@@ -11,6 +11,8 @@ import { useWritingStore } from '@/store/slices/writingStore';
 import { useWorkEditor } from '@/features/writing/hooks/useWorkEditor';
 import { getDocument, Collections } from '@/firebase/firestore.helpers';
 import { uploadFile, getStoragePath } from '@/firebase/storage.helpers';
+import { useAuthStore } from '@/store/slices/authStore';
+import { ROUTES } from '@/constants';
 import { User, WorkType } from '@/types';
 import Button from '@/components/ui/Button';
 import Avatar from '@/components/ui/Avatar';
@@ -43,6 +45,7 @@ const TYPE_CONFIG: Record<WorkType, {
 const WritingStudioPage: React.FC = () => {
   const { workId } = useParams<{ workId: string }>();
   const history = useHistory();
+  const { user } = useAuthStore();
   const { currentWork, updateContent, updateTitle, setCoverImage, setCollaborators, isSaving } = useWritingStore();
   const { load, save, publish } = useWorkEditor(workId);
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -51,6 +54,12 @@ const WritingStudioPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, [workId]);
+
+  useEffect(() => {
+    if (currentWork && user && currentWork.authorId !== user.id) {
+      history.replace(ROUTES.READ_WORK.replace(':workId', workId));
+    }
+  }, [currentWork?.authorId, user?.id]);
 
   useEffect(() => {
     const ids = currentWork?.collaborators ?? [];

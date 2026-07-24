@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { cartOutline, imageOutline } from 'ionicons/icons';
+import { useHistory } from 'react-router-dom';
 import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
+import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
+import { ROUTES } from '@/constants';
 import { formatCurrency } from '@/utils';
 
 const TABS = ['Featured', 'Books', 'Art', 'Services'];
@@ -9,6 +12,8 @@ const TABS = ['Featured', 'Books', 'Art', 'Services'];
 const MarketplacePage: React.FC = () => {
   const [tab, setTab] = useState('Featured');
   const { works, listings } = useMarketplace(tab);
+  const { buy, isBuying } = useBuyWork();
+  const history = useHistory();
 
   return (
     <IonPage>
@@ -33,15 +38,21 @@ const MarketplacePage: React.FC = () => {
               <h3 className="text-sm font-bold mb-2">Featured Works</h3>
               {works.map(w => (
                 <div key={w.id} className="flex items-center gap-3 py-3 border-b border-wilde-border">
-                  <div className="w-12 h-10 bg-gray-100 rounded-md flex items-center justify-center">
-                    <IonIcon icon={imageOutline} aria-hidden="true" className="text-gray-500" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold">{w.title}</p>
-                    <p className="text-xs text-wilde-muted">by {w.authorId}</p>
-                    <p className="text-sm font-bold">{formatCurrency(w.price ?? 0, w.currency)}</p>
-                  </div>
-                  <button className="text-xs bg-wilde-black text-white px-3 py-1.5 rounded-md">Buy</button>
+                  <button onClick={() => history.push(ROUTES.READ_WORK.replace(':workId', w.id))}
+                    className="flex items-center gap-3 flex-1 text-left">
+                    <div className="w-12 h-10 bg-gray-100 rounded-md flex items-center justify-center shrink-0">
+                      <IonIcon icon={imageOutline} aria-hidden="true" className="text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">{w.title}</p>
+                      <p className="text-xs text-wilde-muted">by {w.authorId}</p>
+                      <p className="text-sm font-bold">{formatCurrency(w.price ?? 0, w.currency)}</p>
+                    </div>
+                  </button>
+                  <button disabled={isBuying} onClick={() => buy(w)}
+                    className="text-xs bg-wilde-black text-white px-3 py-1.5 rounded-md disabled:opacity-50">
+                    Buy
+                  </button>
                 </div>
               ))}
             </>

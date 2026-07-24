@@ -16,6 +16,7 @@ import HomePage from '@/pages/main/HomePage';
 import ExplorePage from '@/pages/main/ExplorePage';
 import CreateMenuPage from '@/pages/writing/CreateMenuPage';
 import WritingStudioPage from '@/pages/writing/WritingStudioPage';
+import ReadWorkPage from '@/pages/writing/ReadWorkPage';
 import CollaborationPage from '@/pages/writing/CollaborationPage';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import JobsPage from '@/pages/marketplace/JobsPage';
@@ -43,6 +44,7 @@ const AppRouter: React.FC = () => (
             <Route exact path={ROUTES.PROFILE}        component={ProfileDashPage} />
             <Route exact path={ROUTES.CREATOR_PROFILE} component={CreatorProfilePage} />
             <Route exact path={ROUTES.WRITING_STUDIO} component={WritingStudioPage} />
+            <Route exact path={ROUTES.READ_WORK}      component={ReadWorkPage} />
             <Route exact path={ROUTES.COLLABORATION}  component={CollaborationPage} />
             <Route exact path={ROUTES.AI_ASSISTANT}   component={AiAssistantPage} />
             <Route exact path={ROUTES.JOBS}           component={JobsPage} />

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IonCard, IonCardContent, IonIcon } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
 import {
   heartOutline, eyeOutline, createOutline, imagesOutline,
   filmOutline, ticketOutline, pencilOutline, bookOutline,
@@ -7,6 +8,8 @@ import {
 import { Work, WorkType, User } from '@/types';
 import { formatCount, truncate } from '@/utils';
 import { getDocument, Collections } from '@/firebase/firestore.helpers';
+import { useAuthStore } from '@/store/slices/authStore';
+import { ROUTES } from '@/constants';
 import Avatar from './Avatar';
 
 const TYPE_ICONS: Record<WorkType, string> = {
@@ -25,14 +28,22 @@ interface WorkCardProps {
 
 const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
   const [author, setAuthor] = useState<User | null>(null);
+  const history = useHistory();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     if (!work.authorId) return;
     getDocument<User>(Collections.USERS, work.authorId).then(setAuthor);
   }, [work.authorId]);
 
+  const handleClick = () => {
+    if (onClick) { onClick(); return; }
+    const route = user?.id === work.authorId ? ROUTES.WRITING_STUDIO : ROUTES.READ_WORK;
+    history.push(route.replace(':workId', work.id));
+  };
+
   return (
-    <IonCard button onClick={onClick} className="m-0 rounded-lg border border-wilde-border shadow-none">
+    <IonCard button onClick={handleClick} className="m-0 rounded-lg border border-wilde-border shadow-none">
       <div className="h-32 bg-gray-100 overflow-hidden flex items-center justify-center">
         {work.coverImageUrl ? (
           <img src={work.coverImageUrl} alt={work.title} className="w-full h-full object-cover" />

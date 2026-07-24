@@ -59,8 +59,7 @@ const HomePage: React.FC = () => {
             <h2 className="font-bold text-sm mb-2">Recent Works</h2>
             <div className="grid grid-cols-2 gap-3">
               {feed.map(work => (
-                <WorkCard key={work.id} work={work}
-                  onClick={() => history.push(ROUTES.WRITING_STUDIO.replace(':workId', work.id))} />
+                <WorkCard key={work.id} work={work} />
               ))}
             </div>
           </section>
