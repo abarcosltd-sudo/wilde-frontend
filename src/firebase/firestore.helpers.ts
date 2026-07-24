@@ -37,6 +37,7 @@ export const Collections = {
   JOBS:                 'Jobs',
   JOB_APPLICATIONS:     'JobApplications',
   NOTIFICATIONS:        'Notifications',
+  REVIEWS:              'Reviews',
 } as const;
 
 export const getDocument = async <T>(col: string, id: string): Promise<T | null> => {

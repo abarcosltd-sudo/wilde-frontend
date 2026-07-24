@@ -77,8 +77,13 @@ work top to bottom within each group. Each item names the files involved.
   freshly-created document's timestamp is displayed. Needs either converting
   on read (`.toDate().toISOString()`) or updating the format helpers to accept
   a Timestamp.
-- [ ] **Reviews tab** — `src/pages/profile/CreatorProfilePage.tsx` hardcodes
-  "No reviews yet"; no review data model or submission flow exists.
+- [x] **Reviews tab** — added a `Reviews` collection (`Review` type in
+  `marketplace.types.ts`) gated to buyers with a completed `Order` for that
+  creator (`useReviews.ts`); `CreatorProfilePage` now shows a star-rating
+  summary, a review list, and a "Leave a review" form when eligible. Needs a
+  `firestore.rules` deploy (new `Reviews` collection, create-only, reviewer
+  must match `auth.uid` — no server-side purchase re-verification, consistent
+  with this app's existing trust level elsewhere).
 - [ ] **Writing Studio rich-text toolbar is decorative** — Bold/Italic/Underline/List/
   Align buttons in `WritingStudioPage.tsx` (`TOOLBAR_BUTTONS`) have no handlers;
   the editor is a plain `<textarea>`.

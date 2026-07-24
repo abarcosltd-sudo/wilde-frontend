@@ -106,5 +106,10 @@ service cloud.firestore {
     match /Payments/{paymentId} {
       allow read: if isAuth() && request.auth.uid == resource.data.userId;
     }
+
+    match /Reviews/{reviewId} {
+      allow read:   if true;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.reviewerId;
+    }
   }
 }
