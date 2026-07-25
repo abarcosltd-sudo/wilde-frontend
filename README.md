@@ -53,10 +53,14 @@ Notes:
 
 - **Displaying** images is unaffected — `<img src>` is not a CORS request, so
   existing covers render fine even while uploads are broken.
-- Origins must match exactly, including scheme and port. Cloud Storage does not
-  support wildcard subdomains, so Vercel **preview** deployments
-  (`wilde-frontend-git-*.vercel.app`) need their specific domains added, or a
-  stable alias pointed at them.
+- Observed behaviour on `firebasestorage.googleapis.com`: once the bucket has
+  *any* CORS configuration, preflights return `200` with
+  `Access-Control-Allow-Origin: *` — including for origins not in the list
+  above. What unblocked uploads was the presence of a config, not the specific
+  origins. Vercel **preview** deployments therefore appear to work without being
+  listed. Keep the list accurate anyway: it is what the bucket is configured to
+  permit, and Cloud Storage does not support wildcard subdomains if enforcement
+  ever tightens.
 - The `capacitor://localhost` and `http://localhost` entries cover the native
   iOS and Android builds.
 
