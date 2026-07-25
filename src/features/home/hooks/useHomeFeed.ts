@@ -1,24 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { queryDocuments, Collections, orderBy, limit } from '@/firebase/firestore.helpers';
+import { usePrimeUserCache } from '@/hooks/useUser';
 import { Work, User } from '@/types';
 
 export const useHomeFeed = () => {
-  const [feed, setFeed] = useState<Work[]>([]);
-  const [trending, setTrending] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const primeUsers = usePrimeUserCache();
 
-  const load = async () => {
-    setIsLoading(true);
-    const [works, creators] = await Promise.all([
-      queryDocuments<Work>(Collections.WORKS, [orderBy('createdAt', 'desc'), limit(20)]),
-      queryDocuments<User>(Collections.USERS, [orderBy('followersCount', 'desc'), limit(10)]),
-    ]);
-    setFeed(works);
-    setTrending(creators);
-    setIsLoading(false);
+  const feedQuery = useQuery({
+    queryKey: ['home-feed'],
+    queryFn: () => queryDocuments<Work>(Collections.WORKS, [orderBy('createdAt', 'desc'), limit(20)]),
+  });
+
+  const trendingQuery = useQuery({
+    queryKey: ['trending-creators'],
+    queryFn: () => queryDocuments<User>(Collections.USERS, [orderBy('followersCount', 'desc'), limit(10)]),
+  });
+
+  // The trending rail already carries full profiles — hand them to the shared
+  // user cache so tapping through to a creator renders without a second read.
+  useEffect(() => {
+    if (trendingQuery.data) primeUsers(trendingQuery.data);
+  }, [trendingQuery.data]);
+
+  const refresh = async () => {
+    await Promise.all([feedQuery.refetch(), trendingQuery.refetch()]);
   };
 
-  useEffect(() => { load(); }, []);
-
-  return { feed, trending, refresh: load, isLoading };
+  return {
+    feed: feedQuery.data ?? [],
+    trending: trendingQuery.data ?? [],
+    refresh,
+    // Only true on the very first load. A background refetch of cached data
+    // keeps the existing list on screen rather than flashing skeletons.
+    isLoading: feedQuery.isPending || trendingQuery.isPending,
+  };
 };

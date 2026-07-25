@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, star, starOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useCreatorProfile } from '@/features/profile/hooks/useCreatorProfile';
 import { useReviews } from '@/features/profile/hooks/useReviews';
 import { useAuthStore } from '@/store/slices/authStore';
-import { getDocument, Collections } from '@/firebase/firestore.helpers';
-import { User } from '@/types';
+import { useUser } from '@/hooks/useUser';
 import Avatar from '@/components/ui/Avatar';
 import WorkCard from '@/components/ui/WorkCard';
 import Button from '@/components/ui/Button';
+import IconButton from '@/components/ui/IconButton';
+import {
+  SkeletonScreen, ProfileHeaderSkeleton, WorkGridSkeleton,
+} from '@/components/ui/Skeleton';
 import { formatCount } from '@/utils';
 
 const TABS = ['Portfolio', 'About', 'Reviews'];
@@ -28,28 +31,24 @@ const StarRow: React.FC<{ rating: number; onChange?: (n: number) => void }> = ({
 );
 
 const ReviewerName: React.FC<{ reviewerId: string }> = ({ reviewerId }) => {
-  const [reviewer, setReviewer] = useState<User | null>(null);
-
-  useEffect(() => {
-    getDocument<User>(Collections.USERS, reviewerId).then(setReviewer);
-  }, [reviewerId]);
-
+  const { user: reviewer } = useUser(reviewerId);
   return <>{reviewer?.displayName ?? '…'}</>;
 };
 
-const ReviewForm: React.FC<{ onSubmit: (rating: number, comment: string) => Promise<void> }> = ({ onSubmit }) => {
+interface ReviewFormProps {
+  onSubmit: (rating: number, comment: string) => void;
+  isSubmitting: boolean;
+}
+
+const ReviewForm: React.FC<ReviewFormProps> = ({ onSubmit, isSubmitting }) => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
-  const [isSubmitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    try {
-      await onSubmit(rating, comment.trim());
-      setComment('');
-    } finally {
-      setSubmitting(false);
-    }
+  // The review is rendered optimistically, so the form can clear straight away
+  // rather than holding the user's text hostage until the write lands.
+  const handleSubmit = () => {
+    onSubmit(rating, comment.trim());
+    setComment('');
   };
 
   return (
@@ -70,21 +69,54 @@ const CreatorProfilePage: React.FC = () => {
   const history = useHistory();
   const { user } = useAuthStore();
   const [tab, setTab] = useState('Portfolio');
-  const { creator, works, follow, isFollowing } = useCreatorProfile(uid);
-  const { reviews, averageRating, canReview, submitReview } = useReviews(uid);
+  const {
+    creator, works, follow, isFollowing, isFollowPending, isLoading, isWorksLoading,
+  } = useCreatorProfile(uid);
+  const { reviews, averageRating, canReview, submitReview, isSubmitting } = useReviews(uid);
   const isOwnProfile = user?.uid === uid;
 
-  if (!creator) return null;
+  const backButton = (
+    <div className="-ml-2 mb-4">
+      <IconButton icon={chevronBackOutline} label="Go back" onClick={() => history.goBack()} />
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <IonPage>
+        <IonContent>
+          <div className="p-4">
+            {backButton}
+            <SkeletonScreen label="profile">
+              <ProfileHeaderSkeleton />
+              <div className="mt-6"><WorkGridSkeleton count={4} /></div>
+            </SkeletonScreen>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  if (!creator) {
+    return (
+      <IonPage>
+        <IonContent>
+          <div className="p-4">
+            {backButton}
+            <p className="text-sm text-wilde-muted text-center py-12">
+              This creator profile could not be found.
+            </p>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
-          <button onClick={() => history.goBack()}
-            aria-label="Go back"
-            className="mb-4 min-w-11 min-h-11 flex items-center justify-center -ml-2 rounded-full active:bg-gray-100">
-            <IonIcon icon={chevronBackOutline} aria-hidden="true" className="text-xl" />
-          </button>
+        <div className="p-4 animate-fade-in">
+          {backButton}
           <div className="flex flex-col items-center gap-2 mb-4">
             <Avatar src={creator.photoURL} name={creator.displayName} size="lg" />
             <h2 className="font-bold text-base">{creator.displayName}</h2>
@@ -102,8 +134,11 @@ const CreatorProfilePage: React.FC = () => {
           </div>
           {!isOwnProfile && (
             <div className="flex gap-2 mb-4">
-              <button onClick={() => follow()}
-                className={'flex-1 rounded-lg py-2 text-sm font-medium ' +
+              {/* Label and follower count flip on tap via an optimistic update,
+                  so this never sits waiting on the write to land. */}
+              <button onClick={() => follow()} disabled={isFollowPending}
+                aria-pressed={isFollowing}
+                className={'flex-1 rounded-lg py-2 text-sm font-medium transition-colors ' +
                   (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
@@ -124,16 +159,26 @@ const CreatorProfilePage: React.FC = () => {
             ))}
           </div>
           {tab === 'Portfolio' && (
-            <div className="grid grid-cols-2 gap-3">
-              {works.map(w => <WorkCard key={w.id} work={w} />)}
-            </div>
+            isWorksLoading ? (
+              <SkeletonScreen label="portfolio"><WorkGridSkeleton count={4} /></SkeletonScreen>
+            ) : works.length === 0 ? (
+              <p className="text-sm text-wilde-muted text-center py-12">
+                {creator.displayName} hasn't published any works yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 animate-fade-in">
+                {works.map(w => <WorkCard key={w.id} work={w} />)}
+              </div>
+            )
           )}
           {tab === 'About' && (
-            <p className="text-sm leading-relaxed text-gray-600">{creator.bio}</p>
+            creator.bio
+              ? <p className="text-sm leading-relaxed text-gray-600">{creator.bio}</p>
+              : <p className="text-sm text-wilde-muted text-center py-12">No bio yet.</p>
           )}
           {tab === 'Reviews' && (
             <div>
-              {canReview && <ReviewForm onSubmit={submitReview} />}
+              {canReview && <ReviewForm onSubmit={submitReview} isSubmitting={isSubmitting} />}
               {reviews.map(r => (
                 <div key={r.id} className="border-b border-wilde-border py-3">
                   <div className="flex items-center justify-between mb-1">

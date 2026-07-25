@@ -1,47 +1,80 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryDocuments, createDocument, Collections, where } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
+import { useUiStore } from '@/store/slices/uiStore';
 import { Review, Order } from '@/types';
 
 export const useReviews = (creatorId: string) => {
   const { user } = useAuthStore();
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [eligibleOrder, setEligibleOrder] = useState<Order | null>(null);
-  const [hasReviewed, setHasReviewed] = useState(false);
+  const qc = useQueryClient();
+  const showToast = useUiStore(s => s.showToast);
+  const reviewsKey = ['reviews', creatorId] as const;
 
-  const loadReviews = useCallback(() => {
-    queryDocuments<Review>(Collections.REVIEWS, [where('creatorId', '==', creatorId)]).then(setReviews);
-  }, [creatorId]);
+  const { data: reviews = [], isPending: isLoading } = useQuery({
+    queryKey: reviewsKey,
+    queryFn: () => queryDocuments<Review>(Collections.REVIEWS, [where('creatorId', '==', creatorId)]),
+    enabled: !!creatorId,
+  });
 
-  useEffect(() => { loadReviews(); }, [loadReviews]);
+  // Only buyers with a completed order may review, so eligibility is two reads
+  // that are cached alongside the list.
+  const { data: eligibleOrder = null } = useQuery({
+    queryKey: ['review-eligibility', creatorId, user?.uid],
+    queryFn: async () => {
+      const orders = await queryDocuments<Order>(Collections.ORDERS, [
+        where('buyerId', '==', user!.uid),
+        where('sellerId', '==', creatorId),
+        where('status', '==', 'completed'),
+      ]);
+      return orders[0] ?? null;
+    },
+    enabled: !!user && user.uid !== creatorId,
+  });
 
-  useEffect(() => {
-    if (!user || user.uid === creatorId) return;
-    queryDocuments<Order>(Collections.ORDERS, [
-      where('buyerId', '==', user.uid),
-      where('sellerId', '==', creatorId),
-      where('status', '==', 'completed'),
-    ]).then(orders => setEligibleOrder(orders[0] ?? null));
-    queryDocuments<Review>(Collections.REVIEWS, [
-      where('creatorId', '==', creatorId),
-      where('reviewerId', '==', user.uid),
-    ]).then(rows => setHasReviewed(rows.length > 0));
-  }, [creatorId, user?.uid]);
+  const hasReviewed = !!user && reviews.some(r => r.reviewerId === user.uid);
+
+  const { mutate: submitReview, isPending: isSubmitting } = useMutation({
+    mutationFn: async ({ rating, comment }: { rating: number; comment: string }) => {
+      if (!user || !eligibleOrder) return;
+      await createDocument(Collections.REVIEWS, {
+        creatorId, reviewerId: user.uid, orderId: eligibleOrder.id, rating, comment,
+      });
+    },
+
+    // Show the review — and its effect on the average — the moment it's
+    // submitted, so the form doesn't sit there looking like nothing happened.
+    onMutate: async ({ rating, comment }) => {
+      await qc.cancelQueries({ queryKey: reviewsKey });
+      const prev = qc.getQueryData<Review[]>(reviewsKey);
+      if (user && eligibleOrder) {
+        const pending = {
+          id: `optimistic-${Date.now()}`,
+          creatorId, reviewerId: user.uid, orderId: eligibleOrder.id, rating, comment,
+        } as Review;
+        qc.setQueryData<Review[]>(reviewsKey, old => [pending, ...(old ?? [])]);
+      }
+      return { prev };
+    },
+
+    onError: (_e, _v, ctx) => {
+      if (ctx) qc.setQueryData(reviewsKey, ctx.prev);
+      showToast("Couldn't post your review. Please try again.", 'danger');
+    },
+
+    onSuccess: () => showToast('Review posted', 'success'),
+    onSettled: () => qc.invalidateQueries({ queryKey: reviewsKey }),
+  });
 
   const averageRating = reviews.length
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
-  const submitReview = async (rating: number, comment: string) => {
-    if (!user || !eligibleOrder) return;
-    await createDocument(Collections.REVIEWS, {
-      creatorId, reviewerId: user.uid, orderId: eligibleOrder.id, rating, comment,
-    });
-    setHasReviewed(true);
-    loadReviews();
+  return {
+    reviews,
+    averageRating,
+    canReview: !!eligibleOrder && !hasReviewed,
+    submitReview: (rating: number, comment: string) => submitReview({ rating, comment }),
+    isSubmitting,
+    isLoading,
   };
-
-  const canReview = !!eligibleOrder && !hasReviewed;
-
-  return { reviews, averageRating, canReview, submitReview };
 };

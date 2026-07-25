@@ -3,6 +3,47 @@
 Compiled from a full platform audit (2026-07-24). Items are grouped by priority;
 work top to bottom within each group. Each item names the files involved.
 
+## Performance & polish pass (2026-07-25)
+
+- [x] **Skeleton loaders** — `components/ui/Skeleton.tsx`: a grey-bar primitive
+  with a shimmer sweep (hidden under `prefers-reduced-motion`), plus per-surface
+  skeletons shaped like the content they replace (work card, creator rail,
+  creator grid, list row, notification, profile header, prose). Wired into Home,
+  Explore, Marketplace, Jobs, Notifications, Creator Profile, Profile analytics,
+  Read and Collaboration. `SkeletonScreen` wraps a set with one polite
+  `role="status"` announcement so screen readers hear "Loading X" once instead of
+  reading every placeholder. Replaces the bare `IonSpinner`s and the screens that
+  previously rendered `null` while loading.
+- [x] **Data caching** — React Query was installed and configured but only half
+  adopted; `useHomeFeed`, `useExplore`, `useCreatorProfile`, `useCollaboration`,
+  `useJobs`, `useReviews` and `ReadWorkPage` all re-fetched from scratch on every
+  mount. All are now cached, with `gcTime` raised to 30min and
+  `refetchOnWindowFocus` off so returning to a screen renders instantly.
+  - **The big win**: `WorkCard`, `AuthorName`, `HireButton`, `CommentAuthor` and
+    `ReviewerName` each ran their own uncached `getDocument` per instance — a
+    20-card feed by 3 authors fired 20 reads, again on every remount. A shared
+    `hooks/useUser.ts` collapses that to one read per distinct user, shared
+    app-wide; `CreatorProfilePage` reuses the same cache key, so opening a
+    profile from a card is instant. The trending rail primes the cache directly.
+  - Explore's search now filters the cached page in memory instead of issuing a
+    Firestore read per keystroke, and tab switches keep the previous results on
+    screen (`keepPreviousData`) instead of flashing empty.
+- [x] **Optimistic rendering** — follow/unfollow (button + follower count),
+  notification mark-read and mark-all-read, job apply, review submit, community
+  post/like/join-leave, collaborator invite, and paywall unlock after purchase.
+  All roll back on failure and surface the failure via toast. Comments were left
+  on `onSnapshot`, which already echoes pending writes locally.
+- [x] **Icon button tooltips** — `components/ui/Tooltip.tsx` and
+  `IconButton.tsx`. Every icon-only button now has a hover/focus label and a
+  matching `aria-label` from a single `label` prop, so the two can't drift.
+  Gated behind `@media (hover: hover)` so tooltips never stick open after a tap,
+  and shown on keyboard focus via `group-focus-within`. `IconButton` also
+  supports an unread badge, used for the notification count on Home.
+- [x] **Test setup was broken** — Vitest was collecting the Playwright specs in
+  `tests/e2e` and had no `globals`, so all 3 files failed and *zero* tests ran
+  (pre-existing, verified against a clean tree). Fixed in `vite.config.ts`; the
+  7 existing tests now run, alongside 10 new ones covering the `createdAt` fix.
+
 ## High priority — core value prop / trust
 
 - [ ] **Real AI Prompt generation** — `src/features/ai-assistant/hooks/useAiPrompts.ts`
@@ -69,14 +110,17 @@ work top to bottom within each group. Each item names the files involved.
     around it locally for comment sorting; **this is a systemic issue across
     the whole app** (Notifications, Works, Jobs, everything with a
     `createdAt`) and needs its own pass — see new item below.
-- [ ] **`createdAt`/`updatedAt` are Firestore Timestamps, not strings** — every
-  `User`/`Work`/`Comment`/etc. type declares `createdAt: string`, and
-  `formatTimeAgo`/`formatDate` (`src/utils/format.ts`) call `new Date(dateStr)`
-  on them directly. A Firestore `Timestamp` object passed to `new Date()`
-  produces `Invalid Date`. Likely already silently broken anywhere a
-  freshly-created document's timestamp is displayed. Needs either converting
-  on read (`.toDate().toISOString()`) or updating the format helpers to accept
-  a Timestamp.
+- [x] **`createdAt`/`updatedAt` are Firestore Timestamps, not strings** — fixed
+  at the read boundary: `getDocument`/`queryDocuments`/`subscribeToQuery` in
+  `firestore.helpers.ts` now walk each document through a `normalize()` that
+  converts any `Timestamp` to an ISO string, so the declared `createdAt: string`
+  types are honest and no caller needs to know the field came from Firestore.
+  (Only plain objects/arrays are walked — `GeoPoint`/`DocumentReference` pass
+  through untouched.) `format.ts` was hardened as defence in depth: it accepts
+  `string | number | Date | Timestamp | null`, and renders a pending
+  `serverTimestamp()` (which reads back `null`) as "just now" rather than
+  `Invalid Date`. Added `toMillis()` for sorting, replacing the local
+  workaround in `useCollaboration`. Covered by `tests/unit/format.test.ts`.
 - [x] **Reviews tab** — added a `Reviews` collection (`Review` type in
   `marketplace.types.ts`) gated to buyers with a completed `Order` for that
   creator (`useReviews.ts`); `CreatorProfilePage` now shows a star-rating
@@ -112,30 +156,72 @@ work top to bottom within each group. Each item names the files involved.
 
 ## Lower priority — larger features / cleanup
 
-- [ ] **Chapters for long-form works** — `src/features/writing/services/chapter.service.ts`
-  and `writingStore.chapters` exist but the editor only ever handles one flat
-  `content` string, even though "Long Work" shows a "Chapter 1" label implying more.
-- [ ] **Export (PDF/DOCX/EPUB)** — `src/features/premium/services/export.service.ts`
-  is built, no button anywhere calls it.
-- [ ] **Premium upgrade** — `src/features/premium/hooks/usePremium.ts` calls a real
-  payment-initiation endpoint but Settings disables "Premium" as "Coming soon".
-- [ ] **Community (Posts/Groups)** — `src/features/community/hooks/usePosts.ts`,
-  `useGroups.ts` call a real backend API; no route or nav entry exists at all.
-- [ ] **Settings "Coming soon" items** — Writing Reminders, Payment Methods,
-  Privacy, Help & Support (`src/pages/settings/SettingsPage.tsx`).
-- [ ] **Dedupe Create entry points** — `/app/create` (`CreateMenuPage.tsx`) is
-  registered but unreachable; the bottom nav's Create tab opens `CreateMenuModal.tsx`
-  instead. Pick one and delete the other.
-- [ ] **Toast system unused** — `src/store/slices/uiStore.ts` (`toast`/`showToast`/
-  `hideToast`) has no `<Toast>` component subscribing to it; app uses SweetAlert2
-  modals instead. Remove or wire up.
-- [ ] **Marketplace cart icon is decorative** — `MarketplacePage.tsx` header cart
-  icon has no `onClick` and there's no cart page/flow.
+- [x] **Chapters for long-form works** — `long_work` now stores its text as
+  `Chapters` documents (`useChapters.ts`) instead of one flat `content` string.
+  The Writing Studio shows a chapter strip (select / add / delete, with `order`
+  kept contiguous on delete); the editor remounts per chapter and flushes the
+  open one before switching, saving, publishing or exporting. `ReadWorkPage`
+  stitches chapters back together in order under `<h3>` headings. Works created
+  before this seed their first chapter from the existing `content`, so no
+  existing draft is stranded. Deleted the dead `chapter.service.ts` (404).
+- [x] **Export** — rewritten client-side in `export.service.ts`; the Writing
+  Studio header now has an Export button. PDF renders into a hidden iframe and
+  opens the print dialog ("Save as PDF") — an iframe rather than `window.open`
+  so popup blockers don't eat it; Word downloads an HTML-based `.doc`; plain
+  text downloads a flattened `.txt`. Long works export whole, not just the open
+  chapter.
+  - **EPUB deliberately dropped**: it's a ZIP container with a required
+    manifest, which needs a zip dependency to produce something readers will
+    actually open. A broken `.epub` is worse than not offering it.
+- [ ] **Premium upgrade** — still blocked. `/payments/initiate` returns **404**
+  (see structural note); Settings now says "Needs payments" instead of the
+  vaguer "Coming soon", and `usePremium.ts` documents why it is unreachable.
+  Same blocker as Real payments above.
+- [x] **Community (Posts/Groups)** — `usePosts.ts`/`useGroups.ts` rebuilt on
+  Firestore (their `/community/*` endpoints 404). New `CommunityPage` at
+  `/app/community` with Feed and Groups tabs: post to the feed, like a post,
+  create a group, join/leave. Reachable from a Community icon on Home and from
+  Settings. Posting, liking and join/leave are all optimistic.
+- [x] **Settings "Coming soon" items** — **Help & Support** and **Privacy** are
+  now real pages. Help is an accordion FAQ describing how the app actually
+  behaves (including that payouts aren't live) plus a support mailto. Privacy is
+  a factual account of what is stored and who can see it — deliberately *not* a
+  fabricated legal policy, which has to be written and reviewed by the operator.
+  The three that can't be honestly built yet now state a specific reason instead
+  of a blanket "Coming soon": Premium and Payment Methods say "Needs payments";
+  Writing Reminders says "Needs notifications" (no local-notification capability
+  is installed, so a stored reminder preference would act on nothing).
+  - **Found while writing the Privacy page**: the "Hire" buttons on
+    `CreatorProfilePage` and `MarketplacePage` build a `mailto:` from the other
+    user's `email` field, so **any signed-in user can read any other user's
+    email address**, with no setting to opt out. The page discloses this
+    honestly, but it's worth an explicit product decision.
+- [x] **Dedupe Create entry points** — deleted the unreachable `CreateMenuPage`
+  and its `/app/create` route; the bottom nav's modal is the single entry point.
+  The page offered "Upload Artwork" and the modal didn't, so that option was
+  folded into the modal first — deleting the page outright would have removed
+  the only way to start an artwork. Both copies of the create logic are replaced
+  by one `useCreateWork` hook.
+- [x] **Toast system unused** — added `<Toast>` (`components/ui/Toast.tsx`),
+  mounted once in `App.tsx`, subscribing to `uiStore.toast`. `showToast` now
+  carries an incrementing id so an identical repeat message re-opens. Used for
+  the failure side of optimistic updates, where the UI has already moved on and
+  only needs to say the write didn't stick; SweetAlert2 still handles anything
+  needing a decision.
+- [x] **Marketplace cart icon is decorative** — removed. There is no cart flow
+  and purchases complete straight from the Buy button, so the icon promised
+  something that doesn't exist.
 
 ## Structural note
 
-The external backend at `wilde-backend.onrender.com` (`src/services/api.service.ts`
-and every `*.service.ts` file that wraps it) is not called by any reachable code
-path — the whole app runs directly against Firestore. Decide whether payments/AI/
-jobs-backend/exports/community should move onto that backend, or whether it should
-be retired, before picking up the items above that assume it.
+The external backend at `wilde-backend.onrender.com` is **live but effectively
+empty**: `/api/health` returns `{"status":"ok"}` and every other route probed
+(`/api/posts`, `/api/groups`, `/api/export`, `/api/payments/initiate`,
+`/api/ai/generate`) returns **404**. Community, Chapters and Export have since
+been rebuilt directly on Firestore, matching the rest of the app.
+
+Still importing `api.service.ts` and therefore still dead: `payment.service.ts`,
+`marketplace.service.ts`, `jobs.service.ts`, `notifications.service.ts`,
+`auth.service.ts`, `usePremium.ts`. These were left in place rather than deleted
+because retiring the backend is a product decision — but nothing reachable calls
+them, and the endpoints they call do not exist.

@@ -3,17 +3,26 @@ import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, sendOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useCollaboration } from '@/features/collaboration/hooks/useCollaboration';
+import { useWorkBody } from '@/features/writing/hooks/useWorkBody';
 import { useAuthStore } from '@/store/slices/authStore';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
 import Avatar from '@/components/ui/Avatar';
+import IconButton from '@/components/ui/IconButton';
+import { Skeleton, SkeletonScreen, ProseSkeleton } from '@/components/ui/Skeleton';
 import CommentAuthor from '@/features/collaboration/components/CommentAuthor';
-import { sanitizeHtml } from '@/utils';
+import { sanitizeHtml, formatTimeAgo } from '@/utils';
 
 const CollaborationPage: React.FC = () => {
   const { workId } = useParams<{ workId: string }>();
   const history = useHistory();
   const { user } = useAuthStore();
-  const { work, collaborators, comments, addComment, invite } = useCollaboration(workId);
+  const {
+    work, collaborators, comments, addComment, invite, isLoading, isCommentsLoading,
+  } = useCollaboration(workId);
+  // A long work's text lives in its Chapters, not in `work.content` — without
+  // this the collaboration view reads as empty for exactly the work type most
+  // likely to have collaborators.
+  const body = useWorkBody(work);
   const [commentText, setCommentText] = useState('');
   const [isInviteOpen, setInviteOpen] = useState(false);
 
@@ -31,12 +40,10 @@ const CollaborationPage: React.FC = () => {
       <IonContent>
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-wilde-border">
-            <button onClick={() => history.goBack()}
-              aria-label="Go back"
-              className="min-w-11 min-h-11 flex items-center justify-center rounded-full active:bg-gray-100">
-              <IonIcon icon={chevronBackOutline} aria-hidden="true" />
-            </button>
-            <h2 className="font-bold">{work?.title}</h2>
+            <IconButton icon={chevronBackOutline} label="Go back" onClick={() => history.goBack()} />
+            <h2 className="font-bold truncate">
+              {work?.title ?? (isLoading ? <Skeleton className="h-4 w-32" /> : '')}
+            </h2>
             <span className="min-w-11" />
           </div>
           <div className="flex items-center justify-between px-4 py-2 border-b border-wilde-border">
@@ -59,15 +66,30 @@ const CollaborationPage: React.FC = () => {
             )}
           </div>
           <div className="flex-1 p-4 overflow-y-auto">
-            {work?.content ? (
+            {isLoading ? (
+              <SkeletonScreen label="document"><ProseSkeleton lines={6} /></SkeletonScreen>
+            ) : body ? (
               <div className="text-sm leading-relaxed text-wilde-muted mb-4 whitespace-pre-wrap rich-text-content"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(work.content) }} />
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
             ) : (
               <div className="text-sm leading-relaxed text-wilde-muted mb-4">No content yet.</div>
             )}
-            {comments.map(c => (
-              <div key={c.id} className="border border-wilde-border rounded-lg p-3 mb-2 text-xs">
-                <p className="font-bold mb-1"><CommentAuthor authorId={c.authorId} /></p>
+
+            {isCommentsLoading ? (
+              <SkeletonScreen label="comments">
+                {[0, 1].map(i => (
+                  <div key={i} className="border border-wilde-border rounded-lg p-3 mb-2">
+                    <Skeleton className="h-2.5 w-24" />
+                    <Skeleton className="h-2.5 w-full mt-2" />
+                  </div>
+                ))}
+              </SkeletonScreen>
+            ) : comments.map(c => (
+              <div key={c.id} className="border border-wilde-border rounded-lg p-3 mb-2 text-xs animate-fade-in">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <p className="font-bold"><CommentAuthor authorId={c.authorId} /></p>
+                  <span className="text-wilde-muted shrink-0">{formatTimeAgo(c.createdAt)}</span>
+                </div>
                 <p>{c.content}</p>
               </div>
             ))}
@@ -79,12 +101,8 @@ const CollaborationPage: React.FC = () => {
               aria-label="Write a comment"
               className="flex-1 border border-wilde-border rounded-lg px-3 py-2 text-sm"
               placeholder="Write a comment…" />
-            <button onClick={handleSend}
-              disabled={!commentText.trim()}
-              aria-label="Send comment"
-              className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full text-wilde-black disabled:opacity-30 disabled:cursor-not-allowed active:bg-gray-100">
-              <IonIcon icon={sendOutline} aria-hidden="true" />
-            </button>
+            <IconButton icon={sendOutline} label="Send comment" side="top"
+              onClick={handleSend} disabled={!commentText.trim()} />
           </div>
         </div>
       </IonContent>

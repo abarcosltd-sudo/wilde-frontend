@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { IonCard, IonCardContent, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
   heartOutline, eyeOutline, createOutline, imagesOutline,
   filmOutline, ticketOutline, pencilOutline, bookOutline,
 } from 'ionicons/icons';
-import { Work, WorkType, User } from '@/types';
+import { Work, WorkType } from '@/types';
 import { formatCount, truncate } from '@/utils';
-import { getDocument, Collections } from '@/firebase/firestore.helpers';
+import { useUser } from '@/hooks/useUser';
 import { useAuthStore } from '@/store/slices/authStore';
 import { ROUTES } from '@/constants';
 import Avatar from './Avatar';
+import { Skeleton } from './Skeleton';
 
 const TYPE_ICONS: Record<WorkType, string> = {
   short_story: createOutline,
@@ -27,14 +28,9 @@ interface WorkCardProps {
 }
 
 const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
-  const [author, setAuthor] = useState<User | null>(null);
+  const { user: author, isLoading: isAuthorLoading } = useUser(work.authorId);
   const history = useHistory();
   const { user } = useAuthStore();
-
-  useEffect(() => {
-    if (!work.authorId) return;
-    getDocument<User>(Collections.USERS, work.authorId).then(setAuthor);
-  }, [work.authorId]);
 
   const handleClick = () => {
     if (onClick) { onClick(); return; }
@@ -60,8 +56,19 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
           </p>
         )}
         <div className="flex items-center gap-1.5 mt-2">
-          <Avatar src={author?.photoURL} name={author?.displayName} size="sm" />
-          <span className="text-xs font-medium truncate">{author?.displayName ?? '…'}</span>
+          {isAuthorLoading ? (
+            <>
+              <Skeleton circle className="h-8 w-8 shrink-0" />
+              <Skeleton className="h-2.5 w-20" />
+            </>
+          ) : (
+            <>
+              <Avatar src={author?.photoURL} name={author?.displayName} size="sm" />
+              <span className="text-xs font-medium truncate">
+                {author?.displayName ?? 'Unknown creator'}
+              </span>
+            </>
+          )}
         </div>
         <div className="flex gap-3 mt-1.5 text-xs text-wilde-muted">
           <span className="flex items-center gap-1">

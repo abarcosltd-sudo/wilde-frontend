@@ -8,7 +8,7 @@ interface Analytics { views: number; engagement: number; revenue: number; }
 export const useProfileDash = () => {
   const { user } = useAuthStore();
 
-  const { data: analytics = { views: 0, engagement: 0, revenue: 0 } } = useQuery({
+  const { data: analytics = { views: 0, engagement: 0, revenue: 0 }, isPending } = useQuery({
     queryKey: ['profile-analytics', user?.id],
     queryFn: async (): Promise<Analytics> => {
       const works = await queryDocuments<Work>(Collections.WORKS, [where('authorId', '==', user!.id)]);
@@ -21,5 +21,5 @@ export const useProfileDash = () => {
     enabled: !!user,
   });
 
-  return { user, analytics };
+  return { user, analytics, isLoading: !!user && isPending };
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonPage, IonContent, IonIcon } from '@ionic/react';
+import { IonPage, IonContent } from '@ionic/react';
 import { menuOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useAuthStore } from '@/store/slices/authStore';
@@ -7,13 +7,15 @@ import { useProfileDash } from '@/features/profile/hooks/useProfileDash';
 import { useStreaks } from '@/features/streaks/hooks/useStreaks';
 import Avatar from '@/components/ui/Avatar';
 import StreakBadge from '@/components/ui/StreakBadge';
+import IconButton from '@/components/ui/IconButton';
+import { Skeleton } from '@/components/ui/Skeleton';
 import EditProfileModal from '@/features/profile/components/EditProfileModal';
 import { formatCount, formatCurrency } from '@/utils';
 import { ROUTES } from '@/constants';
 
 const ProfileDashPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { analytics } = useProfileDash();
+  const { analytics, isLoading: isAnalyticsLoading } = useProfileDash();
   const { streak } = useStreaks();
   const history = useHistory();
   const [isEditOpen, setEditOpen] = useState(false);
@@ -28,11 +30,8 @@ const ProfileDashPage: React.FC = () => {
             <h2 className="font-bold text-base">Your Studio</h2>
             <div className="flex items-center gap-2">
               {!!streak?.currentStreak && <StreakBadge count={streak.currentStreak} />}
-              <button onClick={() => history.push(ROUTES.SETTINGS)}
-              aria-label="Open settings"
-              className="min-w-11 min-h-11 flex items-center justify-center text-lg rounded-full active:bg-gray-100">
-              <IonIcon icon={menuOutline} aria-hidden="true" />
-              </button>
+              <IconButton icon={menuOutline} label="Settings"
+                onClick={() => history.push(ROUTES.SETTINGS)} />
             </div>
           </div>
           <div className="flex items-center gap-3 mb-4">
@@ -65,18 +64,24 @@ const ProfileDashPage: React.FC = () => {
               <h3 className="text-sm font-bold">Analytics</h3>
               <span className="text-xs text-wilde-muted">All Time</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3" role="status" aria-busy={isAnalyticsLoading}>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-wilde-muted">Views</p>
-                <p className="font-bold">{formatCount(analytics?.views ?? 0)}</p>
+                {isAnalyticsLoading
+                  ? <Skeleton className="h-4 w-12 mt-1" />
+                  : <p className="font-bold">{formatCount(analytics?.views ?? 0)}</p>}
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-xs text-wilde-muted">Engagement</p>
-                <p className="font-bold">{formatCount(analytics?.engagement ?? 0)}</p>
+                {isAnalyticsLoading
+                  ? <Skeleton className="h-4 w-12 mt-1" />
+                  : <p className="font-bold">{formatCount(analytics?.engagement ?? 0)}</p>}
               </div>
               <div className="bg-gray-50 rounded-lg p-3 col-span-2">
                 <p className="text-xs text-wilde-muted">Revenue</p>
-                <p className="font-bold">{formatCurrency(analytics?.revenue ?? 0)}</p>
+                {isAnalyticsLoading
+                  ? <Skeleton className="h-4 w-20 mt-1" />
+                  : <p className="font-bold">{formatCurrency(analytics?.revenue ?? 0)}</p>}
               </div>
             </div>
           </div>
