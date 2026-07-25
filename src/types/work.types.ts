@@ -21,6 +21,18 @@ export interface Work {
   updatedAt: string;
 }
 
+/**
+ * One row per (work, user). Its existence is what makes a like toggleable and
+ * idempotent — `Work.likeCount` on its own can only be stepped, never told
+ * whether this particular user has already liked.
+ */
+export interface Like {
+  id: string;
+  workId: string;
+  userId: string;
+  createdAt: string;
+}
+
 export interface Chapter {
   id: string;
   workId: string;

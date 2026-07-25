@@ -39,6 +39,8 @@ export const Collections = {
   JOB_APPLICATIONS:     'JobApplications',
   NOTIFICATIONS:        'Notifications',
   REVIEWS:              'Reviews',
+  LIKES:                'Likes',
+  HIRE_REQUESTS:        'HireRequests',
 } as const;
 
 /**

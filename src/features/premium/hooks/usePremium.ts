@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import api from '@/services/api.service';
+import { auth } from '@/firebase/config';
 import { useAuthStore } from '@/store/slices/authStore';
 
 /**
@@ -16,7 +17,8 @@ export const usePremium = () => {
   const { mutate: upgrade, isPending } = useMutation({
     mutationFn: (provider: 'paystack' | 'flutterwave') =>
       api.post('/payments/initiate', {
-        email: user?.email,
+        // From Auth, not the profile document, which no longer carries an email.
+        email: auth.currentUser?.email,
         amount: 2999,
         currency: 'NGN',
         provider,

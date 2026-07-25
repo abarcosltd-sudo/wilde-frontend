@@ -10,6 +10,7 @@ import Avatar from '@/components/ui/Avatar';
 import WorkCard from '@/components/ui/WorkCard';
 import Button from '@/components/ui/Button';
 import IconButton from '@/components/ui/IconButton';
+import HireButton from '@/features/marketplace/components/HireButton';
 import {
   SkeletonScreen, ProfileHeaderSkeleton, WorkGridSkeleton,
 } from '@/components/ui/Skeleton';
@@ -142,10 +143,9 @@ const CreatorProfilePage: React.FC = () => {
                   (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
-              <a href={`mailto:${creator.email}?subject=${encodeURIComponent(`Work opportunity via WILDE`)}`}
-                className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium text-center">
-                Hire
-              </a>
+              <HireButton toUserId={uid} subject={creator.displayName}
+                className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium
+                  text-center transition-colors active:bg-gray-50" />
             </div>
           )}
           <div className="flex border-b border-wilde-border mb-4">

@@ -20,7 +20,7 @@ const SignUpPage: React.FC = () => {
       await createDocument(Collections.USERS, {
       displayName: get('displayName'),
       username: get('username'),
-      email: get('email'),
+      // Email is intentionally not stored here — see the note on `User`.
       roles: [], isPremium: false,
       followersCount: 0, followingCount: 0, worksCount: 0, totalSales: 0, streakCount: 0,
     }, cred.user.uid);

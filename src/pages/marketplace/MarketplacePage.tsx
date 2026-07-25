@@ -6,6 +6,7 @@ import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { useUser } from '@/hooks/useUser';
 import IconButton from '@/components/ui/IconButton';
+import HireButton from '@/features/marketplace/components/HireButton';
 import { SkeletonScreen, ListRowSkeleton } from '@/components/ui/Skeleton';
 import { ROUTES } from '@/constants';
 import { formatCurrency } from '@/utils';
@@ -29,25 +30,6 @@ const WorkThumb: React.FC<{ src?: string; title: string }> = ({ src, title }) =>
         <IonIcon icon={imageOutline} aria-hidden="true" className="text-gray-500" />
       )}
     </div>
-  );
-};
-
-const HireButton: React.FC<{ userId: string; serviceTitle: string }> = ({ userId, serviceTitle }) => {
-  const { user: provider } = useUser(userId);
-
-  if (!provider?.email) {
-    return (
-      <button disabled className="text-xs border border-wilde-border text-wilde-muted rounded-md px-3 py-1.5">
-        Hire
-      </button>
-    );
-  }
-
-  return (
-    <a href={`mailto:${provider.email}?subject=${encodeURIComponent(`Inquiry: ${serviceTitle}`)}`}
-      className="text-xs border border-wilde-black rounded-md px-3 py-1.5">
-      Hire
-    </a>
   );
 };
 
@@ -126,7 +108,7 @@ const MarketplacePage: React.FC = () => {
                     <p className="text-sm font-bold">{l.title}</p>
                     <p className="text-xs text-wilde-muted">{formatCurrency(l.pricePerProject, l.currency)} / project</p>
                   </div>
-                  <HireButton userId={l.userId} serviceTitle={l.title} />
+                  <HireButton toUserId={l.userId} subject={l.title} />
                 </div>
               ))}
             </>

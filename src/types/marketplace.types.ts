@@ -29,6 +29,20 @@ export interface Order {
   updatedAt: string;
 }
 
+/**
+ * An in-app approach from one creative to another. Replaces the old `mailto:`
+ * Hire links, which only worked by exposing the recipient's email address.
+ */
+export interface HireRequest {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  /** What they're being approached about — a service listing or their profile. */
+  subject: string;
+  message: string;
+  createdAt: string;
+}
+
 export interface Review {
   id: string;
   creatorId: string;
