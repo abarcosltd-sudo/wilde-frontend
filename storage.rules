@@ -1,20 +1,54 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /avatars/{uid}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == uid
-        && request.resource.size < 5 * 1024 * 1024
+
+    function isAuth() { return request.auth != null; }
+
+    /**
+     * Uploads must be images and within a size ceiling. The client already
+     * checks both before uploading, but that is a convenience for the user, not
+     * a control — anything holding an ID token can call Storage directly.
+     *
+     * Guards `request.resource` being null, which is the case on delete.
+     */
+    function isImageUnder(mb) {
+      return request.resource != null
+        && request.resource.size < mb * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
+
+    /**
+     * Cover images live under the work's id rather than the uploader's, so
+     * ownership has to be resolved from the Work document. Costs one Firestore
+     * read per upload, which is acceptable for an interactive action.
+     *
+     * The work always exists before its cover is uploaded — the editor creates
+     * the draft first — so a missing document denying the write is correct.
+     */
+    function isWorkAuthor(workId) {
+      return isAuth()
+        && firestore.get(/databases/(default)/documents/Works/$(workId)).data.authorId == request.auth.uid;
+    }
+
+    match /avatars/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAuth() && request.auth.uid == uid && isImageUnder(5);
+      allow delete: if isAuth() && request.auth.uid == uid;
+    }
+
     match /works/{workId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.resource.size < 20 * 1024 * 1024;
+      // Previously `if request.auth != null` with only a 20MB cap, which let any
+      // signed-in user overwrite any work's cover, with any file type.
+      allow create, update: if isWorkAuthor(workId) && isImageUnder(10);
+      allow delete: if isWorkAuthor(workId);
     }
+
     match /artworks/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Previously had no size or content-type limit at all.
+      allow create, update: if isAuth() && request.auth.uid == userId && isImageUnder(10);
+      allow delete: if isAuth() && request.auth.uid == userId;
     }
   }
 }
