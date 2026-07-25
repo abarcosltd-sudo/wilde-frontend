@@ -2,31 +2,71 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAuth()        { return request.auth != null; }
-    function isOwner(uid)    { return isAuth() && request.auth.uid == uid; }
+    function isAuth()     { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
 
-    function isFollowerCountStep() {
-      return isAuth() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followersCount', 'updatedAt']) &&
-        (request.resource.data.followersCount == resource.data.followersCount + 1 ||
-         request.resource.data.followersCount == resource.data.followersCount - 1);
+    /**
+     * Allows an update that does nothing but move one numeric counter by
+     * exactly one. Used for the social counters that a *non-owner* has to be
+     * able to change: following someone bumps their followersCount, liking a
+     * post bumps its likeCount, joining a group bumps its memberCount.
+     *
+     * Without this, those writes are denied — the owning user is the only one
+     * allowed to touch their own document, but they are not the one acting.
+     * Restricting the diff to a single key and a step of one keeps that narrow:
+     * a caller cannot ride along with other field changes or set the value
+     * arbitrarily. It does not stop someone repeating the call to inflate a
+     * count; that needs server-side aggregation to fix properly.
+     */
+    function isCounterStep(field) {
+      return isAuth()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([field, 'updatedAt'])
+        && (request.resource.data[field] == resource.data[field] + 1
+         || request.resource.data[field] == resource.data[field] - 1);
+    }
+
+    function work(workId) {
+      return get(/databases/$(database)/documents/Works/$(workId)).data;
+    }
+
+    /**
+     * The author, or anyone they invited as a collaborator. Costs one document
+     * read per evaluation, so it is only used where collaboration is the point.
+     */
+    function canEditWorkContent(workId) {
+      let w = work(workId);
+      // `collaborators` is optional — works are created without it — and reading
+      // a key that isn't there raises an evaluation error, so it is guarded.
+      return isAuth() && (
+        request.auth.uid == w.authorId || (
+          'collaborators' in w &&
+          w.collaborators is list &&
+          request.auth.uid in w.collaborators
+        )
+      );
     }
 
     match /Users/{uid} {
-      allow read:   if true;
+      allow read: if true;
       allow create, delete: if isOwner(uid);
-      allow update: if isOwner(uid) || isFollowerCountStep();
+      // followersCount is stepped by whoever follows or unfollows them.
+      allow update: if isOwner(uid) || isCounterStep('followersCount');
     }
 
     match /Works/{workId} {
       allow read: if true;
-      allow create: if isAuth();
+      allow create: if isAuth() && request.auth.uid == request.resource.data.authorId;
+      // Deliberately author-only: collaborators may edit the text (see
+      // /Chapters) but not retitle, reprice, publish or delete the work.
       allow update, delete: if isAuth() && request.auth.uid == resource.data.authorId;
     }
 
     match /Chapters/{chapterId} {
       allow read: if true;
-      allow write: if isAuth();
+      // Previously `if isAuth()`, which let any signed-in user rewrite or delete
+      // any chapter of anyone's work.
+      allow create: if isAuth() && canEditWorkContent(request.resource.data.workId);
+      allow update, delete: if isAuth() && canEditWorkContent(resource.data.workId);
     }
 
     match /Follows/{followId} {
@@ -37,31 +77,39 @@ service cloud.firestore {
 
     match /Posts/{postId} {
       allow read: if true;
-      allow create: if isAuth();
-      allow update, delete: if isAuth() && request.auth.uid == resource.data.authorId;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.authorId;
+      allow delete: if isAuth() && request.auth.uid == resource.data.authorId;
+      // Anyone signed in may like; only the author may edit the post itself.
+      allow update: if (isAuth() && request.auth.uid == resource.data.authorId)
+                    || isCounterStep('likeCount');
     }
 
     match /Comments/{commentId} {
       allow read: if true;
-      allow create: if isAuth();
+      allow create: if isAuth() && request.auth.uid == request.resource.data.authorId;
       allow delete: if isAuth() && request.auth.uid == resource.data.authorId;
     }
 
     match /Groups/{groupId} {
       allow read: if true;
-      allow create: if isAuth();
-      allow update: if isAuth() && request.auth.uid == resource.data.createdBy;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.createdBy;
+      // memberCount is stepped by whoever joins or leaves.
+      allow update: if (isAuth() && request.auth.uid == resource.data.createdBy)
+                    || isCounterStep('memberCount');
+      allow delete: if isAuth() && request.auth.uid == resource.data.createdBy;
     }
 
     match /GroupMembers/{memberId} {
       allow read: if isAuth();
-      allow write: if isAuth();
+      // Previously `if isAuth()`, which let anyone remove anyone else from a group.
+      allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
     }
 
     match /GhostwriterListings/{listingId} {
       allow read: if true;
-      allow write: if isAuth() && request.auth.uid == resource.data.userId;
-      allow create: if isAuth();
+      allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
     }
 
     match /Orders/{orderId} {
@@ -69,12 +117,21 @@ service cloud.firestore {
         request.auth.uid == resource.data.buyerId ||
         request.auth.uid == resource.data.sellerId
       );
-      allow create: if isAuth();
+      /**
+       * An Order both unlocks paywalled content and qualifies its buyer to leave
+       * a review, so it must at least be created in the caller's own name.
+       *
+       * This is not proof of payment: no provider is wired up yet, so a
+       * determined user can still forge a completed order for themselves. That
+       * can only be closed by creating orders server-side off a verified payment
+       * webhook — see the payments item in TODO.md.
+       */
+      allow create: if isAuth() && request.auth.uid == request.resource.data.buyerId;
     }
 
     match /Prompts/{promptId} {
-      allow read, write: if isAuth() && request.auth.uid == resource.data.userId;
-      allow create: if isAuth();
+      allow read, update, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
     }
 
     match /Streaks/{uid} {
@@ -82,34 +139,55 @@ service cloud.firestore {
     }
 
     match /Reminders/{reminderId} {
-      allow read, write: if isAuth() && request.auth.uid == resource.data.userId;
-      allow create: if isAuth();
+      allow read, update, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
     }
 
     match /Notifications/{notifId} {
-      allow read:   if isAuth() && request.auth.uid == resource.data.userId;
-      allow create: if isAuth();
-      allow update: if isAuth() && request.auth.uid == resource.data.userId;
+      allow read: if isAuth() && request.auth.uid == resource.data.userId;
+      /**
+       * Necessarily open: notifications are written *to* someone else — a new
+       * follower, a buyer, a publishing author fanning out to followers — so the
+       * recipient can never be the caller. The shape check keeps it to
+       * well-formed, unread notifications rather than arbitrary documents.
+       * Moving this fan-out server-side is the real fix.
+       */
+      allow create: if isAuth()
+        && request.resource.data.keys().hasAll(['userId', 'icon', 'message', 'read'])
+        && request.resource.data.read == false;
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
     }
 
     match /Jobs/{jobId} {
       allow read: if true;
-      allow create: if isAuth();
+      allow create: if isAuth() && request.auth.uid == request.resource.data.posterId;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.posterId;
     }
 
     match /JobApplications/{applicationId} {
-      allow read:   if true;
+      // Readable so a poster can see applicants and an applicant can see that
+      // they already applied.
+      allow read: if isAuth();
       allow create: if isAuth() && request.auth.uid == request.resource.data.applicantId;
+      allow delete: if isAuth() && request.auth.uid == resource.data.applicantId;
     }
 
     match /Payments/{paymentId} {
+      // Read-only to the client; payment documents are written server-side.
       allow read: if isAuth() && request.auth.uid == resource.data.userId;
     }
 
     match /Reviews/{reviewId} {
-      allow read:   if true;
+      allow read: if true;
+      /**
+       * Buyer eligibility is enforced in the client (`useReviews` only shows the
+       * form to someone holding a completed Order). Re-checking it here would
+       * need a query, which rules cannot do — it would take a denormalised
+       * `Orders/{buyerId}_{sellerId}` document to `get()`. Left as-is,
+       * consistent with the Orders note above.
+       */
       allow create: if isAuth() && request.auth.uid == request.resource.data.reviewerId;
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.reviewerId;
     }
   }
 }

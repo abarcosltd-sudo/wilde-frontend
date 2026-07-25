@@ -1,0 +1,31 @@
+[
+  {
+    "origin": [
+      "https://wilde-frontend.vercel.app",
+      "http://localhost:5173",
+      "capacitor://localhost",
+      "http://localhost"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length",
+      "Content-Range",
+      "Content-Disposition",
+      "Authorization",
+      "Range",
+      "ETag",
+      "User-Agent",
+      "x-goog-resumable",
+      "X-Goog-Upload-Protocol",
+      "X-Goog-Upload-Command",
+      "X-Goog-Upload-Offset",
+      "X-Goog-Upload-Status",
+      "X-Goog-Upload-URL",
+      "X-Goog-Upload-Header-Content-Type",
+      "X-Goog-Upload-Header-Content-Length",
+      "X-Firebase-Storage-Version"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
