@@ -17,6 +17,21 @@ const AuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
   return <>{author?.displayName ?? '…'}</>;
 };
 
+/** Row thumbnail: the work's cover if it has one, otherwise a placeholder. */
+const WorkThumb: React.FC<{ src?: string; title: string }> = ({ src, title }) => {
+  const [hasError, setError] = useState(false);
+  return (
+    <div className="w-12 h-10 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center shrink-0">
+      {src && !hasError ? (
+        <img src={src} alt={title} loading="lazy" decoding="async"
+          onError={() => setError(true)} className="w-full h-full object-cover" />
+      ) : (
+        <IonIcon icon={imageOutline} aria-hidden="true" className="text-gray-500" />
+      )}
+    </div>
+  );
+};
+
 const HireButton: React.FC<{ userId: string; serviceTitle: string }> = ({ userId, serviceTitle }) => {
   const { user: provider } = useUser(userId);
 
@@ -81,9 +96,7 @@ const MarketplacePage: React.FC = () => {
                 <div key={w.id} className="flex items-center gap-3 py-3 border-b border-wilde-border">
                   <button onClick={() => history.push(ROUTES.READ_WORK.replace(':workId', w.id))}
                     className="flex items-center gap-3 flex-1 text-left">
-                    <div className="w-12 h-10 bg-gray-100 rounded-md flex items-center justify-center shrink-0">
-                      <IonIcon icon={imageOutline} aria-hidden="true" className="text-gray-500" />
-                    </div>
+                    <WorkThumb src={w.coverImageUrl} title={w.title} />
                     <div>
                       <p className="text-sm font-bold">{w.title}</p>
                       <p className="text-xs text-wilde-muted">by <AuthorName authorId={w.authorId} /></p>

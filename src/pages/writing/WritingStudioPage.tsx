@@ -4,7 +4,8 @@ import {
 } from '@ionic/react';
 import {
   chevronBackOutline, listOutline, textOutline, swapHorizontalOutline,
-  imageOutline, sparklesOutline, addOutline, trashOutline, downloadOutline,
+  imageOutline, imagesOutline, sparklesOutline, addOutline, trashOutline,
+  downloadOutline, closeOutline,
 } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWritingStore } from '@/store/slices/writingStore';
@@ -12,6 +13,7 @@ import { useWorkEditor } from '@/features/writing/hooks/useWorkEditor';
 import { useChapters } from '@/features/writing/hooks/useChapters';
 import { uploadFile, getStoragePath } from '@/firebase/storage.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
+import { useUiStore } from '@/store/slices/uiStore';
 import { useUsers } from '@/hooks/useUser';
 import { ROUTES } from '@/constants';
 import { User, WorkType } from '@/types';
@@ -39,6 +41,13 @@ const ALIGN_COMMANDS = ['justifyLeft', 'justifyCenter', 'justifyRight'] as const
 // alignment currently applied rather than a fixed "Text alignment".
 const ALIGN_LABELS = ['Aligned left', 'Aligned centre', 'Aligned right'] as const;
 
+/**
+ * Storage rules cap uploads under `works/{workId}` at 20MB and don't restrict
+ * content type, so both limits are enforced here too — a 19MB bitmap would be
+ * accepted by the server but is a poor thumbnail and a slow feed.
+ */
+const COVER_MAX_BYTES = 5 * 1024 * 1024;
+
 const TOOLBAR_BUTTON_CLASS =
   'min-w-11 min-h-9 flex items-center justify-center text-xs px-2 py-1 border border-wilde-border ' +
   'rounded transition-colors active:bg-gray-100 focus-visible:outline-none ' +
@@ -64,6 +73,7 @@ const WritingStudioPage: React.FC = () => {
   const { user } = useAuthStore();
   const { currentWork, updateContent, updateTitle, setCoverImage, setCollaborators, isSaving } = useWritingStore();
   const { load, save, publish } = useWorkEditor(workId);
+  const showToast = useUiStore(s => s.showToast);
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [isAiPromptOpen, setAiPromptOpen] = useState(false);
   const [isUploadingImage, setUploadingImage] = useState(false);
@@ -85,6 +95,7 @@ const WritingStudioPage: React.FC = () => {
 
   const type = currentWork?.type ?? 'short_story';
   const config = TYPE_CONFIG[type];
+  const hasCover = !!currentWork?.coverImageUrl;
 
   // Long works keep their text in Chapter documents; every other type keeps a
   // single flat `content` string on the Work itself.
@@ -169,15 +180,43 @@ const WritingStudioPage: React.FC = () => {
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset immediately so picking the same file again still fires a change.
+    e.target.value = '';
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('That file is not an image. Choose a JPG, PNG or WebP.', 'danger');
+      return;
+    }
+    if (file.size > COVER_MAX_BYTES) {
+      showToast('That image is larger than 5MB. Choose a smaller one.', 'danger');
+      return;
+    }
+
     setUploadingImage(true);
     try {
       const url = await uploadFile(getStoragePath.workCover(workId), file);
       setCoverImage(url);
+      // The URL is only persisted to Firestore on save, so say so rather than
+      // letting the user assume the cover is already live.
+      showToast('Cover added — save or publish to keep it', 'success');
+    } catch {
+      showToast("Couldn't upload that image. Please try again.", 'danger');
     } finally {
       setUploadingImage(false);
-      e.target.value = '';
     }
+  };
+
+  const handleRemoveCover = async () => {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Remove this cover image?',
+      text: 'The work will fall back to a placeholder on the timeline.',
+      showCancelButton: true,
+      confirmButtonText: 'Remove',
+      cancelButtonText: 'Cancel',
+    });
+    if (result.isConfirmed) setCoverImage('');
   };
 
   const handleSaveDraft = async () => {
@@ -243,6 +282,17 @@ const WritingStudioPage: React.FC = () => {
               placeholder="Untitled"
               className="flex-1 min-w-0 text-center font-bold text-base bg-transparent focus:outline-none" />
             <IconButton icon={sparklesOutline} label="AI Prompt" onClick={() => setAiPromptOpen(true)} />
+            {/* Artwork already has a full-size upload target in the body, so the
+                header control would be a second way to do the same thing. */}
+            {type !== 'artwork' && (
+              <IconButton
+                icon={hasCover ? imagesOutline : imageOutline}
+                label={isUploadingImage
+                  ? 'Uploading cover image…'
+                  : hasCover ? 'Change cover image' : 'Add cover image'}
+                disabled={isUploadingImage}
+                onClick={handleImagePick} />
+            )}
             <IconButton icon={downloadOutline} label="Export" onClick={handleExport} />
           </div>
           {config.showToolbar && (
@@ -266,6 +316,30 @@ const WritingStudioPage: React.FC = () => {
               </Tooltip>
             </div>
           )}
+          {/* Shows what the timeline card will use, so the choice is verifiable
+              here rather than only after publishing. */}
+          {type !== 'artwork' && (hasCover || isUploadingImage) && (
+            <div className="flex items-center gap-3 px-4 py-2 border-t border-wilde-border">
+              <div className="w-16 h-10 rounded-md bg-gray-100 overflow-hidden shrink-0
+                flex items-center justify-center">
+                {isUploadingImage
+                  ? <IonSpinner name="crescent" className="scale-75" />
+                  : <img src={currentWork!.coverImageUrl} alt=""
+                      className="w-full h-full object-cover" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold">Cover image</p>
+                <p className="text-xs text-wilde-muted">
+                  {isUploadingImage ? 'Uploading…' : 'Shown as the thumbnail on the timeline'}
+                </p>
+              </div>
+              {hasCover && !isUploadingImage && (
+                <IconButton icon={closeOutline} label="Remove cover image"
+                  className="!min-w-9 !min-h-9 !text-base"
+                  onClick={handleRemoveCover} />
+              )}
+            </div>
+          )}
           {collaboratorProfiles.length > 0 && (
             <button onClick={() => history.push(ROUTES.COLLABORATION.replace(':workId', workId))}
               className="flex items-center gap-1 px-4 py-2 border-t border-wilde-border w-full">
@@ -282,9 +356,12 @@ const WritingStudioPage: React.FC = () => {
 
       <IonContent>
         <div className="p-4 h-full">
+          {/* Shared by the header's cover button and artwork's upload target, so
+              it lives at page level rather than inside one branch. */}
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+            onChange={handleImageChange} />
           {type === 'artwork' ? (
             <div className="flex flex-col gap-4">
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
               <button type="button" onClick={handleImagePick}
                 disabled={isUploadingImage}
                 className="border border-dashed border-wilde-border rounded-lg h-56 flex flex-col items-center justify-center gap-2 text-wilde-muted overflow-hidden">
