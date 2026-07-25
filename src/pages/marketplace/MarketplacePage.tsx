@@ -1,32 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
-import { cartOutline, imageOutline, briefcaseOutline } from 'ionicons/icons';
+import { imageOutline, briefcaseOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
-import { getDocument, Collections } from '@/firebase/firestore.helpers';
+import { useUser } from '@/hooks/useUser';
+import IconButton from '@/components/ui/IconButton';
+import { SkeletonScreen, ListRowSkeleton } from '@/components/ui/Skeleton';
 import { ROUTES } from '@/constants';
 import { formatCurrency } from '@/utils';
-import { User } from '@/types';
 
 const TABS = ['Featured', 'Books', 'Art', 'Services'];
 
 const AuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
-  const [author, setAuthor] = useState<User | null>(null);
-
-  useEffect(() => {
-    getDocument<User>(Collections.USERS, authorId).then(setAuthor);
-  }, [authorId]);
-
+  const { user: author } = useUser(authorId);
   return <>{author?.displayName ?? '…'}</>;
 };
 
 const HireButton: React.FC<{ userId: string; serviceTitle: string }> = ({ userId, serviceTitle }) => {
-  const [provider, setProvider] = useState<User | null>(null);
-
-  useEffect(() => {
-    getDocument<User>(Collections.USERS, userId).then(setProvider);
-  }, [userId]);
+  const { user: provider } = useUser(userId);
 
   if (!provider?.email) {
     return (
@@ -46,7 +38,7 @@ const HireButton: React.FC<{ userId: string; serviceTitle: string }> = ({ userId
 
 const MarketplacePage: React.FC = () => {
   const [tab, setTab] = useState('Featured');
-  const { works, listings } = useMarketplace(tab);
+  const { works, listings, isLoading } = useMarketplace(tab);
   const { buy, isBuying } = useBuyWork();
   const history = useHistory();
 
@@ -56,14 +48,10 @@ const MarketplacePage: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-black">WILDE MARKET</h1>
-            <div className="flex items-center gap-1">
-              <button onClick={() => history.push(ROUTES.JOBS)}
-                aria-label="Creative Jobs"
-                className="min-w-11 min-h-11 flex items-center justify-center rounded-full active:bg-gray-100">
-                <IonIcon icon={briefcaseOutline} aria-hidden="true" className="text-xl" />
-              </button>
-              <IonIcon icon={cartOutline} aria-hidden="true" className="text-xl" />
-            </div>
+            {/* The cart icon that used to sit here was decorative — there is no
+                cart flow, and purchases complete straight from the Buy button. */}
+            <IconButton icon={briefcaseOutline} label="Creative Jobs"
+              onClick={() => history.push(ROUTES.JOBS)} />
           </div>
           <div className="flex gap-2 border-b border-wilde-border pb-3 mb-4">
             {TABS.map(t => (
@@ -75,9 +63,20 @@ const MarketplacePage: React.FC = () => {
               </button>
             ))}
           </div>
-          {tab !== 'Services' && (
+          {isLoading && (
+            <SkeletonScreen label={tab === 'Services' ? 'services' : 'works for sale'}>
+              <ListRowSkeleton count={5} thumb={tab !== 'Services'} />
+            </SkeletonScreen>
+          )}
+
+          {!isLoading && tab !== 'Services' && (
             <>
               <h3 className="text-sm font-bold mb-2">Featured Works</h3>
+              {works.length === 0 && (
+                <p className="text-sm text-wilde-muted text-center py-12">
+                  Nothing for sale in {tab} yet.
+                </p>
+              )}
               {works.map(w => (
                 <div key={w.id} className="flex items-center gap-3 py-3 border-b border-wilde-border">
                   <button onClick={() => history.push(ROUTES.READ_WORK.replace(':workId', w.id))}
@@ -99,9 +98,14 @@ const MarketplacePage: React.FC = () => {
               ))}
             </>
           )}
-          {tab === 'Services' && (
+          {!isLoading && tab === 'Services' && (
             <>
               <h3 className="text-sm font-bold mb-2">Services</h3>
+              {listings.length === 0 && (
+                <p className="text-sm text-wilde-muted text-center py-12">
+                  No services listed yet.
+                </p>
+              )}
               {listings.map(l => (
                 <div key={l.id} className="flex items-center gap-3 py-3 border-b border-wilde-border">
                   <div className="w-8 h-8 rounded-full bg-gray-200" />

@@ -1,9 +1,25 @@
 import DOMPurify from 'dompurify';
 
-const ALLOWED_TAGS = ['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'ul', 'ol', 'li', 'br', 'div', 'p', 'span'];
+const ALLOWED_TAGS = [
+  'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'ul', 'ol', 'li', 'br', 'div', 'p', 'span',
+  // Chapter headings, emitted by the reader when it stitches a long work together.
+  'h2', 'h3', 'h4',
+];
 
 export const sanitizeHtml = (html: string) =>
   DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR: ['style'] });
+
+/**
+ * Escapes plain text for interpolation into an HTML string.
+ *
+ * Sanitising afterwards would strip any injected markup anyway, but escaping at
+ * the point of interpolation means a chapter titled `A <b>Bold</b> Move` renders
+ * as written instead of silently turning bold.
+ */
+export const escapeHtml = (text: string) =>
+  text.replace(/[&<>"']/g, ch => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string
+  ));
 
 export const truncateHtml = (html: string, maxChars: number): string => {
   const container = document.createElement('div');

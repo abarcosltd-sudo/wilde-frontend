@@ -1,48 +1,71 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getDocument, createDocument, updateDocument, subscribeToQuery,
   Collections, where,
 } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
-import { Work, Comment, User } from '@/types';
-
-// createdAt comes back from Firestore as a Timestamp, not the ISO string the
-// app's types claim — see TODO.md.
-const toMillis = (v: unknown): number =>
-  v && typeof v === 'object' && 'toMillis' in v ? (v as { toMillis(): number }).toMillis() : new Date(v as string).getTime();
+import { useUsers } from '@/hooks/useUser';
+import { Work, Comment } from '@/types';
+import { toMillis } from '@/utils';
 
 export const useCollaboration = (workId: string) => {
   const { user } = useAuthStore();
-  const [work, setWork] = useState<Work | null>(null);
-  const [collaborators, setCollaborators] = useState<User[]>([]);
+  const qc = useQueryClient();
+  const workKey = ['work', workId] as const;
+
+  const { data: work, isPending: isWorkLoading } = useQuery({
+    queryKey: workKey,
+    queryFn: () => getDocument<Work>(Collections.WORKS, workId),
+    enabled: !!workId,
+  });
+
+  const { users: collaborators } = useUsers(work?.collaborators ?? []);
+
   const [comments, setComments] = useState<Comment[]>([]);
+  const [isCommentsLoading, setCommentsLoading] = useState(true);
 
+  // Live listener rather than a polled query: Firestore echoes a pending write
+  // into the snapshot straight away, so a new comment appears the moment it is
+  // posted without any manual optimistic bookkeeping. Its `createdAt` is null
+  // until the server resolves, which `formatTimeAgo` renders as "just now".
   useEffect(() => {
-    getDocument<Work>(Collections.WORKS, workId).then(setWork);
+    if (!workId) return;
+    setCommentsLoading(true);
+    return subscribeToQuery<Comment>(
+      Collections.COMMENTS,
+      [where('postId', '==', workId)],
+      docs => {
+        // Sorted client-side: ordering server-side would require a composite
+        // index on (postId, createdAt) that this project doesn't define.
+        setComments([...docs].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt)));
+        setCommentsLoading(false);
+      },
+    );
   }, [workId]);
-
-  useEffect(() => {
-    const ids = work?.collaborators ?? [];
-    if (ids.length === 0) { setCollaborators([]); return; }
-    Promise.all(ids.map(id => getDocument<User>(Collections.USERS, id)))
-      .then(profiles => setCollaborators(profiles.filter((p): p is User => !!p)));
-  }, [work?.collaborators]);
-
-  useEffect(() => subscribeToQuery<Comment>(Collections.COMMENTS,
-    [where('postId', '==', workId)],
-    docs => setComments([...docs].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))),
-  ), [workId]);
 
   const addComment = async (content: string) => {
     if (!user) return;
     await createDocument(Collections.COMMENTS, { postId: workId, authorId: user.uid, content });
   };
 
-  const invite = async (users: User[]) => {
+  const invite = async (users: { id: string }[]) => {
     const ids = users.map(u => u.id);
-    await updateDocument(Collections.WORKS, workId, { collaborators: ids });
-    setWork(w => w && { ...w, collaborators: ids });
+    qc.setQueryData<Work | null>(workKey, w => w && { ...w, collaborators: ids });
+    try {
+      await updateDocument(Collections.WORKS, workId, { collaborators: ids });
+    } finally {
+      qc.invalidateQueries({ queryKey: workKey });
+    }
   };
 
-  return { work, collaborators, comments, addComment, invite };
+  return {
+    work: work ?? null,
+    collaborators,
+    comments,
+    addComment,
+    invite,
+    isLoading: isWorkLoading,
+    isCommentsLoading,
+  };
 };

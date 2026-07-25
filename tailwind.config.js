@@ -16,6 +16,19 @@ module.exports = {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Playfair Display', 'serif'],
       },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'fade-in': {
+          '0%':   { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.6s infinite',
+        'fade-in': 'fade-in 220ms ease-out both',
+      },
     },
   },
   plugins: [],

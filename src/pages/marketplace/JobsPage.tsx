@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { IonPage, IonContent, IonIcon } from '@ionic/react';
+import { IonPage, IonContent } from '@ionic/react';
 import { swapVerticalOutline, addOutline } from 'ionicons/icons';
 import { useJobs } from '@/features/jobs/hooks/useJobs';
 import PostJobModal from '@/features/jobs/components/PostJobModal';
+import IconButton from '@/components/ui/IconButton';
+import { SkeletonScreen, ListRowSkeleton } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/utils';
 
 const JobsPage: React.FC = () => {
-  const { jobs, apply, isApplying, appliedJobIds, refetchJobs } = useJobs();
+  const { jobs, apply, isApplying, appliedJobIds, refetchJobs, isLoading } = useJobs();
   const [sortDesc, setSortDesc] = useState(true);
   const [isPostOpen, setPostOpen] = useState(false);
 
@@ -22,22 +24,21 @@ const JobsPage: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <h1 className="font-bold text-lg">Creative Jobs</h1>
             <div className="flex items-center gap-1">
-              <button onClick={() => setPostOpen(true)}
-                aria-label="Post a job"
-                className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
-                <IonIcon icon={addOutline} aria-hidden="true" />
-              </button>
-              <button onClick={() => setSortDesc(v => !v)}
-                aria-label={sortDesc ? 'Sorted by budget, highest first. Tap to sort lowest first.' : 'Sorted by budget, lowest first. Tap to sort highest first.'}
-                className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
-                <IonIcon icon={swapVerticalOutline} aria-hidden="true" />
-              </button>
+              <IconButton icon={addOutline} label="Post a job" onClick={() => setPostOpen(true)} />
+              <IconButton icon={swapVerticalOutline} onClick={() => setSortDesc(v => !v)}
+                label={sortDesc ? 'Budget: highest first' : 'Budget: lowest first'} />
             </div>
           </div>
-          {sortedJobs.length === 0 && (
-            <p className="text-center text-wilde-muted text-sm mt-12">No jobs posted yet</p>
-          )}
-          <div className="flex flex-col gap-3">
+
+          {isLoading ? (
+            <SkeletonScreen label="jobs"><ListRowSkeleton count={4} thumb={false} /></SkeletonScreen>
+          ) : sortedJobs.length === 0 ? (
+            <div className="text-center mt-12">
+              <p className="text-wilde-muted text-sm">No jobs posted yet</p>
+              <p className="text-xs text-wilde-muted mt-1">Use the + button to post the first one.</p>
+            </div>
+          ) : (
+          <div className="flex flex-col gap-3 animate-fade-in">
             {sortedJobs.map(job => (
               <div key={job.id} className="border border-wilde-border rounded-xl p-4">
                 <p className="font-bold text-sm">{job.title}</p>
@@ -48,13 +49,15 @@ const JobsPage: React.FC = () => {
                   </span>
                   <button onClick={() => apply(job.id)}
                     disabled={isApplying || appliedJobIds.has(job.id)}
-                    className="text-xs bg-wilde-black text-white rounded-md px-3 py-1.5 disabled:opacity-50">
+                    className="text-xs bg-wilde-black text-white rounded-md px-3 py-1.5
+                      transition-opacity disabled:opacity-50">
                     {appliedJobIds.has(job.id) ? 'Applied' : 'Apply'}
                   </button>
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
       </IonContent>
       <PostJobModal isOpen={isPostOpen} onClose={() => setPostOpen(false)} onPosted={refetchJobs} />

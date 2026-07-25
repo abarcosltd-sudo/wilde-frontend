@@ -28,8 +28,8 @@ export const ROUTES = {
   FORGOT_PASSWORD:'/auth/forgot-password',
   HOME:           '/app/home',
   EXPLORE:        '/app/explore',
-  CREATE:         '/app/create',
   MARKET:         '/app/market',
+  COMMUNITY:      '/app/community',
   PROFILE:        '/app/profile',
   CREATOR_PROFILE:'/app/creator/:uid',
   WRITING_STUDIO: '/app/write/:workId',
@@ -37,6 +37,8 @@ export const ROUTES = {
   JOBS:           '/app/jobs',
   NOTIFICATIONS:  '/app/notifications',
   SETTINGS:       '/app/settings',
+  HELP:           '/app/settings/help',
+  PRIVACY:        '/app/settings/privacy',
   COLLABORATION:  '/app/collab/:workId',
 } as const;
 

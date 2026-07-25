@@ -5,7 +5,7 @@ import { Work, WorkType, GhostwriterListing } from '@/types';
 const BOOK_TYPES: WorkType[] = ['short_story', 'long_work', 'poetry', 'screenplay', 'playlet'];
 
 export const useMarketplace = (tab: string) => {
-  const { data: works = [] } = useQuery({
+  const { data: works = [], isPending: isWorksLoading } = useQuery({
     queryKey: ['market-works', tab],
     queryFn: async () => {
       const published = await queryDocuments<Work>(Collections.WORKS, [
@@ -21,12 +21,16 @@ export const useMarketplace = (tab: string) => {
     },
   });
 
-  const { data: listings = [] } = useQuery({
+  const { data: listings = [], isPending: isListingsLoading } = useQuery({
     queryKey: ['market-listings'],
     queryFn: () => queryDocuments<GhostwriterListing>(Collections.GHOSTWRITER_LISTINGS, [
       where('isActive', '==', true), orderBy('rating', 'desc'), limit(20),
     ]),
   });
 
-  return { works, listings };
+  return {
+    works,
+    listings,
+    isLoading: tab === 'Services' ? isListingsLoading : isWorksLoading,
+  };
 };

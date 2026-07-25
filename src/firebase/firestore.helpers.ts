@@ -16,6 +16,7 @@ import {
   addDoc,
   increment,
   onSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -40,9 +41,32 @@ export const Collections = {
   REVIEWS:              'Reviews',
 } as const;
 
+/**
+ * Firestore returns `serverTimestamp()` fields as `Timestamp` objects, but every
+ * type in `src/types` declares them as ISO `string` and the format helpers pass
+ * them straight to `new Date(...)`. Normalising on read keeps the declared types
+ * honest, so no caller has to know a field came from Firestore.
+ *
+ * Only plain objects/arrays are walked: `GeoPoint`, `DocumentReference` and
+ * friends are class instances and are passed through untouched.
+ */
+const normalize = (value: unknown): unknown => {
+  if (value instanceof Timestamp) return value.toDate().toISOString();
+  if (Array.isArray(value)) return value.map(normalize);
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, normalize(v)])
+    );
+  }
+  return value;
+};
+
+const fromSnapshot = <T>(snap: { id: string; data(): DocumentData | undefined }): T =>
+  ({ id: snap.id, ...(normalize(snap.data() ?? {}) as DocumentData) } as T);
+
 export const getDocument = async <T>(col: string, id: string): Promise<T | null> => {
   const snap = await getDoc(doc(db, col, id));
-  return snap.exists() ? ({ id: snap.id, ...snap.data() } as T) : null;
+  return snap.exists() ? fromSnapshot<T>(snap) : null;
 };
 
 export const createDocument = async (col: string, data: DocumentData, id?: string) => {
@@ -67,7 +91,7 @@ export const queryDocuments = async <T>(
 ): Promise<T[]> => {
   const q = query(collection(db, col), ...constraints);
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as T));
+  return snap.docs.map(d => fromSnapshot<T>(d));
 };
 
 export const subscribeToQuery = <T>(
@@ -76,7 +100,7 @@ export const subscribeToQuery = <T>(
   onData: (docs: T[]) => void
 ) => {
   const q = query(collection(db, col), ...constraints);
-  return onSnapshot(q, snap => onData(snap.docs.map(d => ({ id: d.id, ...d.data() } as T))));
+  return onSnapshot(q, snap => onData(snap.docs.map(d => fromSnapshot<T>(d))));
 };
 
 export { where, orderBy, limit, increment };

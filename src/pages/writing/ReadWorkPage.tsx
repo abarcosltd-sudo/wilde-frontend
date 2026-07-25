@@ -1,14 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, IonSpinner } from '@ionic/react';
+import React from 'react';
+import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon } from '@ionic/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chevronBackOutline, lockClosedOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { getDocument, queryDocuments, Collections, where } from '@/firebase/firestore.helpers';
+import { Chapter } from '@/types';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
-import { Work, User } from '@/types';
+import { useUser } from '@/hooks/useUser';
+import { Work } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
-import { formatCurrency, sanitizeHtml, truncateHtml } from '@/utils';
+import IconButton from '@/components/ui/IconButton';
+import { Skeleton, SkeletonScreen, ProseSkeleton } from '@/components/ui/Skeleton';
+import { formatCurrency, sanitizeHtml, truncateHtml, escapeHtml } from '@/utils';
 
 const PREVIEW_RATIO = 0.5;
 
@@ -17,40 +22,57 @@ const ReadWorkPage: React.FC = () => {
   const history = useHistory();
   const { user } = useAuthStore();
   const { buy, isBuying } = useBuyWork();
+  const qc = useQueryClient();
 
-  const [work, setWork] = useState<Work | null>(null);
-  const [author, setAuthor] = useState<User | null>(null);
-  const [hasPurchased, setHasPurchased] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // Shares the `['work', id]` key with the Writing Studio and Collaboration
+  // screens, so moving between them doesn't refetch the document.
+  const { data: work, isPending: isLoading } = useQuery({
+    queryKey: ['work', workId],
+    queryFn: () => getDocument<Work>(Collections.WORKS, workId),
+    enabled: !!workId,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setIsLoading(true);
-      const w = await getDocument<Work>(Collections.WORKS, workId);
-      if (cancelled) return;
-      setWork(w);
+  const { user: author } = useUser(work?.authorId);
 
-      if (w) {
-        getDocument<User>(Collections.USERS, w.authorId).then(a => { if (!cancelled) setAuthor(a); });
-
-        if (user && w.authorId !== user.id && (w.price ?? 0) > 0) {
-          const orders = await queryDocuments(Collections.ORDERS, [
-            where('workId', '==', workId),
-            where('buyerId', '==', user.id),
-            where('status', '==', 'completed'),
-          ]);
-          if (!cancelled) setHasPurchased(orders.length > 0);
-        }
-      }
-      setIsLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, [workId, user?.id]);
-
+  const purchaseKey = ['purchased', workId, user?.id] as const;
+  const isPriced = (work?.price ?? 0) > 0;
   const isOwner = !!user && work?.authorId === user.id;
-  const isPaywalled = !!work && (work.price ?? 0) > 0 && !isOwner && !hasPurchased;
-  const content = work?.content ?? '';
+
+  const { data: hasPurchased = false } = useQuery({
+    queryKey: purchaseKey,
+    queryFn: async () => {
+      const orders = await queryDocuments(Collections.ORDERS, [
+        where('workId', '==', workId),
+        where('buyerId', '==', user!.id),
+        where('status', '==', 'completed'),
+      ]);
+      return orders.length > 0;
+    },
+    enabled: !!user && !!work && !isOwner && isPriced,
+  });
+
+  // Long works store their text as Chapter documents rather than a flat
+  // `content` string, so the reader stitches them back together in order.
+  const isLongWork = work?.type === 'long_work';
+
+  const { data: chapters = [] } = useQuery({
+    queryKey: ['chapters', workId],
+    queryFn: async () => {
+      const rows = await queryDocuments<Chapter>(Collections.CHAPTERS, [
+        where('workId', '==', workId),
+      ]);
+      return [...rows].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    },
+    enabled: !!work && isLongWork,
+  });
+
+  const isPaywalled = !!work && isPriced && !isOwner && !hasPurchased;
+
+  const content = isLongWork && chapters.length > 0
+    ? chapters
+        .map((c, i) => `<h3>${escapeHtml(c.title || `Chapter ${i + 1}`)}</h3>${c.content ?? ''}`)
+        .join('')
+    : (work?.content ?? '');
   const visibleHtml = isPaywalled
     ? truncateHtml(content, Math.floor(content.length * PREVIEW_RATIO))
     : sanitizeHtml(content);
@@ -58,7 +80,8 @@ const ReadWorkPage: React.FC = () => {
   const handleBuy = async () => {
     if (!work) return;
     const success = await buy(work);
-    if (success) setHasPurchased(true);
+    // Unlock the rest of the text immediately rather than re-reading Orders.
+    if (success) qc.setQueryData(purchaseKey, true);
   };
 
   return (
@@ -66,12 +89,10 @@ const ReadWorkPage: React.FC = () => {
       <IonHeader>
         <IonToolbar>
           <div className="flex items-center gap-2 px-4 py-2">
-            <button onClick={() => history.goBack()}
-              aria-label="Go back"
-              className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100 shrink-0">
-              <IonIcon icon={chevronBackOutline} aria-hidden="true" />
-            </button>
-            <h2 className="flex-1 text-center font-bold text-base truncate">{work?.title ?? 'Loading…'}</h2>
+            <IconButton icon={chevronBackOutline} label="Go back" onClick={() => history.goBack()} />
+            <h2 className="flex-1 text-center font-bold text-base truncate">
+              {work?.title ?? (isLoading ? '' : 'Not found')}
+            </h2>
             <span className="min-w-11" />
           </div>
         </IonToolbar>
@@ -79,13 +100,17 @@ const ReadWorkPage: React.FC = () => {
       <IonContent>
         <div className="p-4">
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <IonSpinner name="crescent" />
-            </div>
+            <SkeletonScreen label="story">
+              <div className="flex items-center gap-2 mb-4">
+                <Skeleton circle className="h-8 w-8" />
+                <Skeleton className="h-3 w-28" />
+              </div>
+              <ProseSkeleton lines={10} />
+            </SkeletonScreen>
           ) : !work ? (
             <p className="text-sm text-wilde-muted text-center py-12">This work could not be found.</p>
           ) : (
-            <>
+            <div className="animate-fade-in">
               <div className="flex items-center gap-2 mb-4">
                 <Avatar src={author?.photoURL} name={author?.displayName} size="sm" />
                 <span className="text-sm font-medium">{author?.displayName ?? '…'}</span>
@@ -111,7 +136,7 @@ const ReadWorkPage: React.FC = () => {
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </IonContent>

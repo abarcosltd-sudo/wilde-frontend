@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { IonPage, IonContent, IonSearchbar, IonSpinner } from '@ionic/react';
+import { IonPage, IonContent, IonSearchbar } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { useExplore } from '@/features/explore/hooks/useExplore';
 import WorkCard from '@/components/ui/WorkCard';
 import Avatar from '@/components/ui/Avatar';
+import {
+  SkeletonScreen, WorkGridSkeleton, CreatorGridSkeleton,
+} from '@/components/ui/Skeleton';
 import { ROUTES } from '@/constants';
 import { formatCount } from '@/utils';
 
@@ -35,17 +38,26 @@ const ExplorePage: React.FC = () => {
             ))}
           </div>
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <IonSpinner name="crescent" />
-            </div>
+            <SkeletonScreen label={activeTab === 'Creators' ? 'creators' : 'works'}>
+              {activeTab === 'Creators' ? <CreatorGridSkeleton /> : <WorkGridSkeleton count={6} />}
+            </SkeletonScreen>
           ) : isEmpty ? (
-            <p className="text-sm text-wilde-muted text-center py-12">No results found.</p>
+            <div className="text-center py-12">
+              <p className="text-sm text-wilde-muted">
+                {query ? `No results for "${query}".` : 'Nothing here yet.'}
+              </p>
+              {query && (
+                <p className="text-xs text-wilde-muted mt-1">Try a different search or another tab.</p>
+              )}
+            </div>
           ) : activeTab === 'Creators' ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 animate-fade-in">
               {creators.map(creator => (
                 <button key={creator.id}
                   onClick={() => history.push(ROUTES.CREATOR_PROFILE.replace(':uid', creator.id))}
-                  className="flex flex-col items-center gap-1 p-3 border border-wilde-border rounded-lg">
+                  className="flex flex-col items-center gap-1 p-3 border border-wilde-border rounded-lg
+                    transition-colors active:bg-gray-50 focus-visible:outline-none
+                    focus-visible:ring-2 focus-visible:ring-wilde-black">
                   <Avatar src={creator.photoURL} name={creator.displayName} size="lg" />
                   <span className="text-sm font-medium text-center">{creator.displayName}</span>
                   <span className="text-xs text-wilde-muted">{formatCount(creator.followersCount)} followers</span>
@@ -53,7 +65,7 @@ const ExplorePage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 animate-fade-in">
               {works.map(item => (
                 <WorkCard key={item.id} work={item} />
               ))}
