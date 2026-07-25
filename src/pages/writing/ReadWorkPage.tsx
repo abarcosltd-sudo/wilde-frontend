@@ -1,13 +1,16 @@
 import React from 'react';
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon } from '@ionic/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { chevronBackOutline, lockClosedOutline } from 'ionicons/icons';
+import { chevronBackOutline, lockClosedOutline, heart, heartOutline, eyeOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { getDocument, queryDocuments, Collections, where } from '@/firebase/firestore.helpers';
 import { useWorkBody } from '@/features/writing/hooks/useWorkBody';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { useUser } from '@/hooks/useUser';
+import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
+import { useTrackView } from '@/hooks/useTrackView';
+import { formatCount } from '@/utils';
 import { Work } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
@@ -33,6 +36,12 @@ const ReadWorkPage: React.FC = () => {
   });
 
   const { user: author } = useUser(work?.authorId);
+  const likedWorkIds = useMyLikes();
+  const { toggleLike } = useToggleLike();
+  const isLiked = !!work && likedWorkIds.has(work.id);
+
+  // Records the read. No-ops for the author and for repeat views this session.
+  useTrackView(work);
 
   const purchaseKey = ['purchased', workId, user?.id] as const;
   const isPriced = (work?.price ?? 0) > 0;
@@ -97,6 +106,21 @@ const ReadWorkPage: React.FC = () => {
               <div className="flex items-center gap-2 mb-4">
                 <Avatar src={author?.photoURL} name={author?.displayName} size="sm" />
                 <span className="text-sm font-medium">{author?.displayName ?? '…'}</span>
+
+                <div className="flex items-center gap-3 ml-auto text-xs text-wilde-muted">
+                  <button onClick={() => toggleLike(work.id)}
+                    aria-pressed={isLiked}
+                    aria-label={`${isLiked ? 'Unlike' : 'Like'} this work`}
+                    className={'flex items-center gap-1 transition-colors ' +
+                      (isLiked ? 'text-red-500' : 'active:text-wilde-black')}>
+                    <IonIcon icon={isLiked ? heart : heartOutline} aria-hidden="true" className="text-base" />
+                    {formatCount(work.likeCount ?? 0)}
+                  </button>
+                  <span className="flex items-center gap-1">
+                    <IonIcon icon={eyeOutline} aria-hidden="true" className="text-base" />
+                    {formatCount(work.viewCount ?? 0)}
+                  </span>
+                </div>
               </div>
               {work.coverImageUrl && (
                 <img src={work.coverImageUrl} alt={work.title}

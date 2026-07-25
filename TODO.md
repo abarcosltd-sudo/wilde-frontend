@@ -212,6 +212,31 @@ work top to bottom within each group. Each item names the files involved.
   and purchases complete straight from the Buy button, so the icon promised
   something that doesn't exist.
 
+## Production verification (2026-07-25)
+
+Firebase was exercised against the real staging project (`wilde-2b0b5`) for the
+first time. Three separate layers were broken, none of them app code:
+
+- [x] **Bucket CORS** — uploads failed the preflight with "does not have HTTP ok
+  status". `cors.json` is now applied to the bucket. **`firebase deploy` does not
+  apply it** — it needs `gcloud storage buckets update` (see README). Verified:
+  preflight went 404 → 200.
+- [x] **Storage rules were never deployed** — the bucket was still on Firebase's
+  default deny rules, so uploads returned `storage/unauthorized` even after CORS
+  was fixed. `--only firestore:rules` does not include storage; it needs
+  `--only storage`. Verified deployed: paths with `allow read: if true` return
+  404 for a missing object, while an unmatched path returns 403.
+- [x] **Storage rules were too open** — `/works/{workId}` allowed any signed-in
+  user to overwrite any work's cover, any file type, up to 20MB. Now scoped to
+  the work's author via `firestore.get()`, images only, 10MB.
+
+End-to-end confirmed: cover uploads succeed and the thumbnail renders on the
+timeline.
+
+**Still unverified against production**: the Firestore rules deploy (the
+previously-denied writes are liking a post and joining a group), and the new
+composite indexes. Everything else in this app has only ever run against mocks.
+
 ## Structural note
 
 The external backend at `wilde-backend.onrender.com` is **live but effectively

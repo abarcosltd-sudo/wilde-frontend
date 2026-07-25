@@ -12,7 +12,13 @@ export interface User {
   uid: string;
   displayName: string;
   username: string;
-  email: string;
+  /**
+   * Deliberately absent. The Users document is world-readable (profiles have to
+   * be), and Firestore rules cannot hide individual fields — so anything stored
+   * here is public. Email lives in Firebase Auth, which is the source of truth
+   * for identity; read the signed-in user's own address from
+   * `auth.currentUser.email` if it is ever needed.
+   */
   photoURL?: string;
   bio?: string;
   roles: CreativeRole[];

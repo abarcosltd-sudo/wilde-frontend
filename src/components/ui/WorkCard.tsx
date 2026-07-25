@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { IonCard, IonCardContent, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
-  heartOutline, eyeOutline, createOutline, imagesOutline,
+  heartOutline, heart, eyeOutline, createOutline, imagesOutline,
   filmOutline, ticketOutline, pencilOutline, bookOutline,
 } from 'ionicons/icons';
 import { Work, WorkType } from '@/types';
 import { formatCount, truncate } from '@/utils';
 import { useUser } from '@/hooks/useUser';
+import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useAuthStore } from '@/store/slices/authStore';
 import { ROUTES } from '@/constants';
 import Avatar from './Avatar';
@@ -32,6 +33,10 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
   const history = useHistory();
   const { user } = useAuthStore();
   const [hasImageError, setImageError] = useState(false);
+  // One cached lookup shared by every card, not a read per card.
+  const likedWorkIds = useMyLikes();
+  const { toggleLike } = useToggleLike();
+  const isLiked = likedWorkIds.has(work.id);
 
   // A new upload replaces the cover at the same storage path, so reset the
   // error flag when the URL changes rather than staying stuck on the fallback.
@@ -85,13 +90,22 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
           )}
         </div>
         <div className="flex gap-3 mt-1.5 text-xs text-wilde-muted">
-          <span className="flex items-center gap-1">
-            <IonIcon icon={heartOutline} aria-hidden="true" />
-            {formatCount(work.likeCount)}
-          </span>
+          <button
+            onClick={e => {
+              // The whole card is a link to the work; liking must not open it.
+              e.stopPropagation();
+              toggleLike(work.id);
+            }}
+            aria-pressed={isLiked}
+            aria-label={`${isLiked ? 'Unlike' : 'Like'} ${work.title}`}
+            className={'flex items-center gap-1 transition-colors ' +
+              (isLiked ? 'text-red-500' : 'active:text-wilde-black')}>
+            <IonIcon icon={isLiked ? heart : heartOutline} aria-hidden="true" />
+            {formatCount(work.likeCount ?? 0)}
+          </button>
           <span className="flex items-center gap-1">
             <IonIcon icon={eyeOutline} aria-hidden="true" />
-            {formatCount(work.viewCount)}
+            {formatCount(work.viewCount ?? 0)}
           </span>
         </div>
       </IonCardContent>

@@ -18,8 +18,9 @@ export const useAuth = () => {
           if (!profile && isOAuth) {
             await createDocument(Collections.USERS, {
               displayName: fbUser.displayName || 'New Creative',
+              // Derived from the address but never stored — the Users document
+              // is world-readable, so email stays in Firebase Auth only.
               username:    fbUser.email?.split('@')[0] || fbUser.uid.slice(0, 8),
-              email:       fbUser.email || '',
               photoURL:    fbUser.photoURL || undefined,
               roles: [], isPremium: false,
               followersCount: 0, followingCount: 0, worksCount: 0, totalSales: 0, streakCount: 0,

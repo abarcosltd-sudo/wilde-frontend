@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon, IonModal } from '@ionic/react';
-import { heartOutline, chatbubbleOutline, peopleOutline, addOutline, closeOutline } from 'ionicons/icons';
+import {
+  heartOutline, heart, chatbubbleOutline, peopleOutline,
+  addOutline, closeOutline, sendOutline,
+} from 'ionicons/icons';
 import { usePosts } from '@/features/community/hooks/usePosts';
+import { usePostComments } from '@/features/community/hooks/usePostComments';
 import { useGroups } from '@/features/community/hooks/useGroups';
 import { useUser } from '@/hooks/useUser';
 import Avatar from '@/components/ui/Avatar';
@@ -28,6 +32,64 @@ const PostAuthor: React.FC<{ authorId: string }> = ({ authorId }) => {
       <span className="text-sm font-semibold truncate">{user?.displayName ?? 'Unknown'}</span>
     </>
   );
+};
+
+/**
+ * Collapsed by default: the thread only fetches once opened, so a feed of posts
+ * doesn't trigger a comment read per post.
+ */
+const CommentThread: React.FC<{ postId: string }> = ({ postId }) => {
+  const { comments, addComment, isPosting, isLoading } = usePostComments(postId, true);
+  const [draft, setDraft] = useState('');
+
+  const handleSend = () => {
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    addComment(trimmed);
+    setDraft('');
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-wilde-border">
+      {isLoading ? (
+        <SkeletonScreen label="comments">
+          <Skeleton className="h-2.5 w-1/3" />
+          <Skeleton className="h-2.5 w-2/3 mt-2" />
+        </SkeletonScreen>
+      ) : comments.length === 0 ? (
+        <p className="text-xs text-wilde-muted mb-2">No comments yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2 mb-2">
+          {comments.map(c => (
+            <div key={c.id} className="text-xs">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-semibold"><PostAuthorName authorId={c.authorId} /></span>
+                <span className="text-wilde-muted shrink-0">{formatTimeAgo(c.createdAt)}</span>
+              </div>
+              <p className="text-wilde-muted mt-0.5">{c.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <input value={draft} onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+          aria-label="Write a comment"
+          placeholder="Add a comment…"
+          className="flex-1 border border-wilde-border rounded-lg px-3 py-1.5 text-xs" />
+        <IconButton icon={sendOutline} label="Post comment" side="top"
+          className="!min-w-9 !min-h-9 !text-base"
+          disabled={!draft.trim() || isPosting} onClick={handleSend} />
+      </div>
+    </div>
+  );
+};
+
+/** Name only — the comment rows are too dense for an avatar. */
+const PostAuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
+  const { user } = useUser(authorId);
+  return <>{user?.displayName ?? '…'}</>;
 };
 
 const NewGroupModal: React.FC<{
@@ -75,6 +137,8 @@ const CommunityPage: React.FC = () => {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Feed');
   const [draft, setDraft] = useState('');
   const [isGroupModalOpen, setGroupModalOpen] = useState(false);
+  // One thread open at a time, so the feed stays readable on a phone.
+  const [openComments, setOpenComments] = useState<string | null>(null);
 
   const { posts, isLoading: isPostsLoading, createPost, isPosting, likePost } = usePosts();
   const {
@@ -145,16 +209,22 @@ const CommunityPage: React.FC = () => {
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">{p.content}</p>
                       <div className="flex gap-4 mt-3 text-xs text-wilde-muted">
                         <button onClick={() => likePost(p.id)}
+                          aria-label={`Like this post. ${p.likeCount ?? 0} likes so far.`}
                           className="flex items-center gap-1 transition-colors active:text-wilde-black">
                           <IonIcon icon={heartOutline} aria-hidden="true" />
                           {formatCount(p.likeCount ?? 0)}
-                          <span className="sr-only">likes</span>
                         </button>
-                        <span className="flex items-center gap-1">
+                        <button
+                          onClick={() => setOpenComments(id => (id === p.id ? null : p.id))}
+                          aria-expanded={openComments === p.id}
+                          aria-label={`${openComments === p.id ? 'Hide' : 'Show'} comments. ${p.commentCount ?? 0} so far.`}
+                          className="flex items-center gap-1 transition-colors active:text-wilde-black">
                           <IonIcon icon={chatbubbleOutline} aria-hidden="true" />
                           {formatCount(p.commentCount ?? 0)}
-                        </span>
+                        </button>
                       </div>
+
+                      {openComments === p.id && <CommentThread postId={p.id} />}
                     </article>
                   ))}
                 </div>
