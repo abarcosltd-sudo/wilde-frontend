@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chevronBackOutline, lockClosedOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { getDocument, queryDocuments, Collections, where } from '@/firebase/firestore.helpers';
-import { Chapter } from '@/types';
+import { useWorkBody } from '@/features/writing/hooks/useWorkBody';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { useUser } from '@/hooks/useUser';
@@ -13,7 +13,7 @@ import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
 import IconButton from '@/components/ui/IconButton';
 import { Skeleton, SkeletonScreen, ProseSkeleton } from '@/components/ui/Skeleton';
-import { formatCurrency, sanitizeHtml, truncateHtml, escapeHtml } from '@/utils';
+import { formatCurrency, sanitizeHtml, truncateHtml } from '@/utils';
 
 const PREVIEW_RATIO = 0.5;
 
@@ -51,28 +51,11 @@ const ReadWorkPage: React.FC = () => {
     enabled: !!user && !!work && !isOwner && isPriced,
   });
 
-  // Long works store their text as Chapter documents rather than a flat
-  // `content` string, so the reader stitches them back together in order.
-  const isLongWork = work?.type === 'long_work';
-
-  const { data: chapters = [] } = useQuery({
-    queryKey: ['chapters', workId],
-    queryFn: async () => {
-      const rows = await queryDocuments<Chapter>(Collections.CHAPTERS, [
-        where('workId', '==', workId),
-      ]);
-      return [...rows].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    },
-    enabled: !!work && isLongWork,
-  });
-
   const isPaywalled = !!work && isPriced && !isOwner && !hasPurchased;
 
-  const content = isLongWork && chapters.length > 0
-    ? chapters
-        .map((c, i) => `<h3>${escapeHtml(c.title || `Chapter ${i + 1}`)}</h3>${c.content ?? ''}`)
-        .join('')
-    : (work?.content ?? '');
+  // Stitches a long work's chapters back together; returns `content` verbatim
+  // for every other type.
+  const content = useWorkBody(work);
   const visibleHtml = isPaywalled
     ? truncateHtml(content, Math.floor(content.length * PREVIEW_RATIO))
     : sanitizeHtml(content);

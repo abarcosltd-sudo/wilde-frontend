@@ -3,6 +3,7 @@ import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, sendOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useCollaboration } from '@/features/collaboration/hooks/useCollaboration';
+import { useWorkBody } from '@/features/writing/hooks/useWorkBody';
 import { useAuthStore } from '@/store/slices/authStore';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
 import Avatar from '@/components/ui/Avatar';
@@ -18,6 +19,10 @@ const CollaborationPage: React.FC = () => {
   const {
     work, collaborators, comments, addComment, invite, isLoading, isCommentsLoading,
   } = useCollaboration(workId);
+  // A long work's text lives in its Chapters, not in `work.content` — without
+  // this the collaboration view reads as empty for exactly the work type most
+  // likely to have collaborators.
+  const body = useWorkBody(work);
   const [commentText, setCommentText] = useState('');
   const [isInviteOpen, setInviteOpen] = useState(false);
 
@@ -63,9 +68,9 @@ const CollaborationPage: React.FC = () => {
           <div className="flex-1 p-4 overflow-y-auto">
             {isLoading ? (
               <SkeletonScreen label="document"><ProseSkeleton lines={6} /></SkeletonScreen>
-            ) : work?.content ? (
+            ) : body ? (
               <div className="text-sm leading-relaxed text-wilde-muted mb-4 whitespace-pre-wrap rich-text-content"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(work.content) }} />
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
             ) : (
               <div className="text-sm leading-relaxed text-wilde-muted mb-4">No content yet.</div>
             )}

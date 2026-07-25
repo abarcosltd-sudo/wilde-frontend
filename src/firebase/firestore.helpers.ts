@@ -50,7 +50,7 @@ export const Collections = {
  * Only plain objects/arrays are walked: `GeoPoint`, `DocumentReference` and
  * friends are class instances and are passed through untouched.
  */
-const normalize = (value: unknown): unknown => {
+export const normalize = (value: unknown): unknown => {
   if (value instanceof Timestamp) return value.toDate().toISOString();
   if (Array.isArray(value)) return value.map(normalize);
   if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
