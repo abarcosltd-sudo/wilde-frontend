@@ -11,6 +11,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import { useWritingStore } from '@/store/slices/writingStore';
 import { useWorkEditor } from '@/features/writing/hooks/useWorkEditor';
 import { useChapters } from '@/features/writing/hooks/useChapters';
+import { chapterLabel } from '@/features/writing/chapterLabel';
 import { uploadFile, getStoragePath } from '@/firebase/storage.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useUiStore } from '@/store/slices/uiStore';
@@ -168,7 +169,7 @@ const WritingStudioPage: React.FC = () => {
     // A long work is exported whole, not just the chapter currently open.
     const body = isLongWork
       ? chapters
-          .map((c, i) => `<h3>${escapeHtml(c.title || `Chapter ${i + 1}`)}</h3>${
+          .map((c, i) => `<h3>${escapeHtml(chapterLabel(c, i))}</h3>${
             c.id === activeChapter?.id ? chapterDraft : (c.content ?? '')}`)
           .join('')
       : (currentWork?.content ?? '');
@@ -398,7 +399,7 @@ const WritingStudioPage: React.FC = () => {
                           (c.id === activeChapter?.id
                             ? 'bg-wilde-black text-white'
                             : 'border border-wilde-border')}>
-                        {c.title || `Chapter ${i + 1}`}
+                        {chapterLabel(c, i)}
                       </button>
                       {chapters.length > 1 && c.id === activeChapter?.id && (
                         <IconButton icon={trashOutline} label="Delete chapter" side="bottom"

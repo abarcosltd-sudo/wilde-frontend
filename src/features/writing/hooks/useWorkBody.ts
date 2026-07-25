@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryDocuments, Collections, where } from '@/firebase/firestore.helpers';
 import { escapeHtml } from '@/utils';
+import { chapterLabel } from '@/features/writing/chapterLabel';
 import { Work, Chapter } from '@/types';
 
 /**
@@ -30,7 +31,7 @@ export const useWorkBody = (work: Work | null | undefined) => {
     if (!isLongWork || chapters.length === 0) return work?.content ?? '';
     // Titles are user-supplied, so they're escaped before interpolation.
     return chapters
-      .map((c, i) => `<h3>${escapeHtml(c.title || `Chapter ${i + 1}`)}</h3>${c.content ?? ''}`)
+      .map((c, i) => `<h3>${escapeHtml(chapterLabel(c, i))}</h3>${c.content ?? ''}`)
       .join('');
   }, [isLongWork, chapters, work?.content]);
 };

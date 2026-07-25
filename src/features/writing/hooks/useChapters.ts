@@ -39,8 +39,11 @@ export const useChapters = (workId: string, enabled: boolean, seedContent?: stri
   const { mutateAsync: addChapter, isPending: isAdding } = useMutation({
     mutationFn: async (title?: string) => {
       const order = chapters.length;
+      // Stored empty unless the author names it. A default of "Chapter N" would
+      // bake in a position that goes stale as soon as a chapter is deleted or
+      // reordered — `chapterLabel` derives the number from the current order.
       return createDocument(Collections.CHAPTERS, {
-        workId, title: title ?? `Chapter ${order + 1}`, content: '', order,
+        workId, title: title ?? '', content: '', order,
       });
     },
     onError: () => showToast("Couldn't add that chapter. Please try again.", 'danger'),
@@ -56,7 +59,7 @@ export const useChapters = (workId: string, enabled: boolean, seedContent?: stri
     if (chapters.length > 0) { hasSeeded.current = true; return; }
     hasSeeded.current = true;
     createDocument(Collections.CHAPTERS, {
-      workId, title: 'Chapter 1', content: seedContent ?? '', order: 0,
+      workId, title: '', content: seedContent ?? '', order: 0,
     })
       .then(() => qc.invalidateQueries({ queryKey: key }))
       .catch(() => {});
