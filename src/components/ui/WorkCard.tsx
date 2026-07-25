@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { IonCard, IonCardContent, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -31,6 +31,11 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
   const { user: author, isLoading: isAuthorLoading } = useUser(work.authorId);
   const history = useHistory();
   const { user } = useAuthStore();
+  const [hasImageError, setImageError] = useState(false);
+
+  // A new upload replaces the cover at the same storage path, so reset the
+  // error flag when the URL changes rather than staying stuck on the fallback.
+  useEffect(() => { setImageError(false); }, [work.coverImageUrl]);
 
   const handleClick = () => {
     if (onClick) { onClick(); return; }
@@ -41,8 +46,17 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick }) => {
   return (
     <IonCard button onClick={handleClick} className="m-0 rounded-lg border border-wilde-border shadow-none">
       <div className="h-32 bg-gray-100 overflow-hidden flex items-center justify-center">
-        {work.coverImageUrl ? (
-          <img src={work.coverImageUrl} alt={work.title} className="w-full h-full object-cover" />
+        {work.coverImageUrl && !hasImageError ? (
+          <img
+            src={work.coverImageUrl}
+            alt={work.title}
+            // Feeds are long and thumbnail-heavy; only load what's in view.
+            loading="lazy"
+            decoding="async"
+            // A deleted or unreachable upload falls back to the type icon rather
+            // than leaving a broken-image glyph in the timeline.
+            onError={() => setImageError(true)}
+            className="w-full h-full object-cover" />
         ) : (
           <IonIcon icon={TYPE_ICONS[work.type]} aria-hidden="true" className="text-4xl text-gray-400" />
         )}
