@@ -64,6 +64,34 @@ Notes:
 - The `capacitor://localhost` and `http://localhost` entries cover the native
   iOS and Android builds.
 
+## Maintenance scripts
+
+`scripts/remove-user-emails.mjs` — one-off cleanup that strips the `email` field
+from existing `Users` documents. The app no longer writes it: profile documents
+are world-readable and Firestore rules cannot hide individual fields, so email
+lives in Firebase Auth only. Documents written before that change still carry it.
+
+Run from Google Cloud Shell, where application-default credentials already exist
+so no service-account key needs downloading:
+
+```bash
+npm install --no-save firebase-admin
+```
+
+Dry run first — it reports how many documents are affected and writes nothing:
+
+```bash
+node scripts/remove-user-emails.mjs
+```
+
+Then apply:
+
+```bash
+node scripts/remove-user-emails.mjs --apply
+```
+
+Firebase Auth is untouched, so sign-in is unaffected.
+
 ## Structure
 
 ```
