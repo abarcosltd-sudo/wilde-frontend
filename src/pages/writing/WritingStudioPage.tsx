@@ -200,8 +200,12 @@ const WritingStudioPage: React.FC = () => {
       // The URL is only persisted to Firestore on save, so say so rather than
       // letting the user assume the cover is already live.
       showToast('Cover added — save or publish to keep it', 'success');
-    } catch {
-      showToast("Couldn't upload that image. Please try again.", 'danger');
+    } catch (err) {
+      // Swallowing this entirely made a bucket misconfiguration look like a
+      // transient glitch. A blocked CORS preflight surfaces here as an opaque
+      // network error, so the code is the only clue worth keeping.
+      console.error('Cover image upload failed:', err);
+      showToast("Couldn't upload that image. Check your connection and try again.", 'danger');
     } finally {
       setUploadingImage(false);
     }
