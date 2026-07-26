@@ -161,8 +161,17 @@ service cloud.firestore {
     }
 
     match /Prompts/{promptId} {
-      allow read, update, delete: if isAuth() && request.auth.uid == resource.data.userId;
-      allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
+      /**
+       * Created server-side only, off a real model call (`POST /api/ai/generate`
+       * writes the record; the Admin SDK bypasses these rules). Client create is
+       * therefore withheld — otherwise anyone could forge history entries the AI
+       * never produced.
+       *
+       * Read stays open to the owner for a direct single-document fetch, but the
+       * app lists history via `GET /api/ai/prompts`: a client list query cannot
+       * prove the `userId` match this rule requires.
+       */
+      allow read, delete: if isAuth() && request.auth.uid == resource.data.userId;
     }
 
     match /Streaks/{uid} {

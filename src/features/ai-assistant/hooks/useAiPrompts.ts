@@ -1,35 +1,78 @@
 import { useState } from 'react';
-import { createDocument, queryDocuments, Collections, orderBy, where, limit } from '@/firebase/firestore.helpers';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import api from '@/services/api.service';
 import { useAuthStore } from '@/store/slices/authStore';
-import { useQuery } from '@tanstack/react-query';
-import { WorkType } from '@/types';
+import { ApiResponse, WorkType } from '@/types';
 
-interface PromptRecord { id: string; category: WorkType; topic: string; prompt: string; output: string; createdAt: string; }
+export interface PromptRecord {
+  id: string;
+  workType: WorkType;
+  topic: string;
+  prompt: string;
+  output: string;
+  createdAt: string;
+}
 
+/**
+ * A generation is a full model round-trip, which the shared 15s client default
+ * cuts off well before the server gives up (especially on a cold start).
+ */
+const GENERATE_TIMEOUT_MS = 60_000;
+
+const messageFor = (err: unknown) => {
+  const response = (err as AxiosError<{ message?: string }>).response;
+  // No response at all — offline, DNS, CORS, or the request timed out.
+  if (!response) return "Couldn't reach the AI. Check your connection and try again.";
+  return response.data?.message ?? 'Something went wrong generating that. Try again.';
+};
+
+/**
+ * Generation and history both run through the backend: the model call needs an
+ * API key that must never reach the browser, and the Prompts document is
+ * written server-side so the saved record can't drift from what was returned.
+ *
+ * History is read from the API rather than Firestore for the same reason the
+ * old direct query failed — the Prompts rule requires a `userId` match, which
+ * a client-side list query can't prove.
+ */
 export const useAiPrompts = (workType: WorkType) => {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   const [output, setOutput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const historyKey = ['prompts', user?.uid, workType];
 
   const { data: history = [] } = useQuery({
-    queryKey: ['prompts', user?.uid, workType],
-    queryFn:  () => queryDocuments<PromptRecord>(Collections.PROMPTS,
-      [where('category', '==', workType), orderBy('createdAt', 'desc'), limit(10)]),
+    queryKey: historyKey,
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<PromptRecord[]>>('/ai/prompts', {
+        params: { workType, limit: 10 },
+      });
+      return res.data.data;
+    },
     enabled: !!user,
   });
 
-  const generate = async (topic: string, prompt: string) => {
-    setIsGenerating(true);
-    // TODO: call backend /api/ai/generate
-    const fakeOutput = `The old house stood at the edge of the forest… (${topic}: ${prompt})`;
-    setOutput(fakeOutput);
-    if (user) {
-      await createDocument(Collections.PROMPTS, {
-        userId: user.uid, category: workType, topic, prompt, output: fakeOutput,
-      });
-    }
-    setIsGenerating(false);
-  };
+  const { mutate, isPending: isGenerating } = useMutation({
+    mutationFn: async ({ topic, prompt }: { topic: string; prompt: string }) => {
+      const res = await api.post<ApiResponse<PromptRecord>>(
+        '/ai/generate',
+        { workType, topic, prompt },
+        { timeout: GENERATE_TIMEOUT_MS },
+      );
+      return res.data.data;
+    },
+    onMutate: () => setError(null),
+    onSuccess: (record) => {
+      setOutput(record.output);
+      queryClient.invalidateQueries({ queryKey: historyKey });
+    },
+    onError: (err) => setError(messageFor(err)),
+  });
 
-  return { generate, output, history, isGenerating };
+  const generate = (topic: string, prompt: string) => mutate({ topic, prompt });
+
+  return { generate, output, error, history, isGenerating };
 };
