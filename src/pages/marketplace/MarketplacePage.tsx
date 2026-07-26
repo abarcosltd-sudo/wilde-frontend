@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
-import { imageOutline, briefcaseOutline } from 'ionicons/icons';
+import { imageOutline, briefcaseOutline, addOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMarketplace } from '@/features/marketplace/hooks/useMarketplace';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { useUser } from '@/hooks/useUser';
 import IconButton from '@/components/ui/IconButton';
 import HireButton from '@/features/marketplace/components/HireButton';
+import OfferServiceModal from '@/features/marketplace/components/OfferServiceModal';
 import { SkeletonScreen, ListRowSkeleton } from '@/components/ui/Skeleton';
 import { ROUTES } from '@/constants';
 import { formatCurrency } from '@/utils';
@@ -37,6 +39,8 @@ const MarketplacePage: React.FC = () => {
   const [tab, setTab] = useState('Featured');
   const { works, listings, isLoading } = useMarketplace(tab);
   const { buy, isBuying } = useBuyWork();
+  const [isOfferOpen, setOfferOpen] = useState(false);
+  const queryClient = useQueryClient();
   const history = useHistory();
 
   return (
@@ -95,10 +99,18 @@ const MarketplacePage: React.FC = () => {
           )}
           {!isLoading && tab === 'Services' && (
             <>
-              <h3 className="text-sm font-bold mb-2">Services</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold">Services</h3>
+                <button onClick={() => setOfferOpen(true)}
+                  className="flex items-center gap-1 text-xs font-medium border border-wilde-border
+                    rounded-full px-3 py-1.5 active:bg-gray-50">
+                  <IonIcon icon={addOutline} aria-hidden="true" />
+                  Offer a service
+                </button>
+              </div>
               {listings.length === 0 && (
                 <p className="text-sm text-wilde-muted text-center py-12">
-                  No services listed yet.
+                  No services listed yet. Be the first.
                 </p>
               )}
               {listings.map(l => (
@@ -114,6 +126,11 @@ const MarketplacePage: React.FC = () => {
             </>
           )}
         </div>
+
+        <OfferServiceModal
+          isOpen={isOfferOpen}
+          onClose={() => setOfferOpen(false)}
+          onListed={() => queryClient.invalidateQueries({ queryKey: ['market-listings'] })} />
       </IonContent>
     </IonPage>
   );

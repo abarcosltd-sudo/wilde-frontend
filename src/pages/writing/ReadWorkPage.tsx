@@ -1,6 +1,6 @@
 import React from 'react';
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon } from '@ionic/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { chevronBackOutline, lockClosedOutline, heart, heartOutline, eyeOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { getDocument, queryDocuments, Collections, where } from '@/firebase/firestore.helpers';
@@ -25,7 +25,6 @@ const ReadWorkPage: React.FC = () => {
   const history = useHistory();
   const { user } = useAuthStore();
   const { buy, isBuying } = useBuyWork();
-  const qc = useQueryClient();
 
   // Shares the `['work', id]` key with the Writing Studio and Collaboration
   // screens, so moving between them doesn't refetch the document.
@@ -69,12 +68,9 @@ const ReadWorkPage: React.FC = () => {
     ? truncateHtml(content, Math.floor(content.length * PREVIEW_RATIO))
     : sanitizeHtml(content);
 
-  const handleBuy = async () => {
-    if (!work) return;
-    const success = await buy(work);
-    // Unlock the rest of the text immediately rather than re-reading Orders.
-    if (success) qc.setQueryData(purchaseKey, true);
-  };
+  // Hands off to the provider's checkout; the unlock is applied when the buyer
+  // returns to PaymentCallbackPage, which reloads the app and re-reads Orders.
+  const handleBuy = () => { if (work) void buy(work); };
 
   return (
     <IonPage>

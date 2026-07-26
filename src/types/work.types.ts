@@ -10,7 +10,12 @@ export interface Work {
   coverImageUrl?: string;
   excerpt?: string;
   content?: string;   // For single-file works
-  isPremium: boolean;
+  /**
+   * Set at publish time. Above zero is the single switch for both "listed in
+   * the marketplace" and "paywalled"; absent or zero means free. There is no
+   * separate premium flag — one existed, was written as `false` at creation and
+   * never read again.
+   */
   price?: number;
   currency?: 'NGN' | 'USD';
   viewCount: number;

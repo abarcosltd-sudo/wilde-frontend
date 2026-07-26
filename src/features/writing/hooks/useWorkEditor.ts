@@ -7,6 +7,12 @@ import { useStreaks } from '@/features/streaks/hooks/useStreaks';
 import { notify } from '@/features/notifications/notify';
 import { Work, Follow } from '@/types';
 
+export interface PublishPricing {
+  /** 0 means free. Anything above must clear `MIN_PRICE` for the currency. */
+  price: number;
+  currency: 'NGN' | 'USD';
+}
+
 export const useWorkEditor = (workId: string) => {
   const { setCurrentWork, currentWork, setSaving } = useWritingStore();
   const { user } = useAuthStore();
@@ -18,7 +24,7 @@ export const useWorkEditor = (workId: string) => {
     setCurrentWork(work);
   }, [workId]);
 
-  const save = useCallback(async (status: 'draft' | 'published') => {
+  const save = useCallback(async (status: 'draft' | 'published', pricing?: PublishPricing) => {
     if (!currentWork) return;
     setSaving(true);
     const wasPublished = currentWork.status === 'published';
@@ -27,6 +33,13 @@ export const useWorkEditor = (workId: string) => {
       title:   currentWork.title,
       status,
     };
+    // Price is only ever set at publish time, so a draft save can't silently
+    // change what a work costs. `price: 0` is what makes a work free — the
+    // marketplace and the paywall both key off `price > 0`.
+    if (pricing) {
+      payload.price = pricing.price;
+      payload.currency = pricing.currency;
+    }
     // Always written, including as '' — writing it only when truthy meant a
     // removed cover image could never be cleared from the document.
     payload.coverImageUrl = currentWork.coverImageUrl ?? '';
@@ -56,7 +69,7 @@ export const useWorkEditor = (workId: string) => {
     setSaving(false);
   }, [currentWork, workId, user, logWrite, qc]);
 
-  const publish = () => save('published');
+  const publish = (pricing: PublishPricing) => save('published', pricing);
 
   return { load, save, publish };
 };

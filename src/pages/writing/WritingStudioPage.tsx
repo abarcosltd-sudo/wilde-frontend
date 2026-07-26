@@ -9,7 +9,7 @@ import {
 } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWritingStore } from '@/store/slices/writingStore';
-import { useWorkEditor } from '@/features/writing/hooks/useWorkEditor';
+import { useWorkEditor, PublishPricing } from '@/features/writing/hooks/useWorkEditor';
 import { useChapters } from '@/features/writing/hooks/useChapters';
 import { chapterLabel } from '@/features/writing/chapterLabel';
 import { uploadFile, getStoragePath } from '@/firebase/storage.helpers';
@@ -23,6 +23,7 @@ import IconButton from '@/components/ui/IconButton';
 import Tooltip from '@/components/ui/Tooltip';
 import RichTextEditor, { RichTextEditorHandle } from '@/components/ui/RichTextEditor';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
+import PublishModal from '@/features/writing/components/PublishModal';
 import AiPromptModal from '@/features/ai-assistant/components/AiPromptModal';
 import { exportWork, EXPORT_FORMATS, ExportFormat } from '@/features/premium/services/export.service';
 import { escapeHtml } from '@/utils';
@@ -76,6 +77,7 @@ const WritingStudioPage: React.FC = () => {
   const { load, save, publish } = useWorkEditor(workId);
   const showToast = useUiStore(s => s.showToast);
   const [isPickerOpen, setPickerOpen] = useState(false);
+  const [isPublishOpen, setPublishOpen] = useState(false);
   const [isAiPromptOpen, setAiPromptOpen] = useState(false);
   const [isUploadingImage, setUploadingImage] = useState(false);
   const [alignIndex, setAlignIndex] = useState(0);
@@ -239,20 +241,12 @@ const WritingStudioPage: React.FC = () => {
     }
   };
 
-  const handlePublish = async () => {
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: 'Publish this work?',
-      text: 'This will make it visible to everyone on WILDE.',
-      showCancelButton: true,
-      confirmButtonText: 'Publish',
-      cancelButtonText: 'Cancel',
-    });
-    if (result.isConfirmed) {
-      await flushActiveChapter();
-      await publish();
-      history.push(ROUTES.HOME);
-    }
+  // The confirm step is the publish modal itself, which also collects the price.
+  const handlePublish = async (pricing: PublishPricing) => {
+    setPublishOpen(false);
+    await flushActiveChapter();
+    await publish(pricing);
+    history.push(ROUTES.HOME);
   };
 
   // `useUsers` re-derives the profiles from the stored ids, so this only needs
@@ -446,7 +440,7 @@ const WritingStudioPage: React.FC = () => {
               className="flex-1 border border-wilde-border rounded-md py-2 text-xs font-medium">
               Collaborate
             </button>
-            <button onClick={handlePublish} disabled={isSaving}
+            <button onClick={() => setPublishOpen(true)} disabled={isSaving}
               className="flex-1 bg-wilde-black text-white rounded-md py-2 text-xs font-medium disabled:opacity-50">
               Publish
             </button>
@@ -459,6 +453,14 @@ const WritingStudioPage: React.FC = () => {
         onClose={() => setPickerOpen(false)}
         initialSelectedIds={currentWork?.collaborators ?? []}
         onSave={handleCollaboratorsSaved} />
+
+      <PublishModal
+        isOpen={isPublishOpen}
+        onClose={() => setPublishOpen(false)}
+        currentPrice={currentWork?.price}
+        currentCurrency={currentWork?.currency}
+        isPublishing={isSaving}
+        onConfirm={handlePublish} />
 
       <AiPromptModal
         isOpen={isAiPromptOpen}

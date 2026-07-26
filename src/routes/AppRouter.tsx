@@ -19,12 +19,14 @@ import ReadWorkPage from '@/pages/writing/ReadWorkPage';
 import CollaborationPage from '@/pages/writing/CollaborationPage';
 import MarketplacePage from '@/pages/marketplace/MarketplacePage';
 import JobsPage from '@/pages/marketplace/JobsPage';
+import PaymentCallbackPage from '@/pages/marketplace/PaymentCallbackPage';
 import NotificationsPage from '@/pages/main/NotificationsPage';
 import CommunityPage from '@/pages/community/CommunityPage';
 import ProfileDashPage from '@/pages/profile/ProfileDashPage';
 import CreatorProfilePage from '@/pages/profile/CreatorProfilePage';
 import SettingsPage from '@/pages/settings/SettingsPage';
 import HelpPage from '@/pages/settings/HelpPage';
+import PremiumPage from '@/pages/settings/PremiumPage';
 import PrivacyPage from '@/pages/settings/PrivacyPage';
 
 const AppRouter: React.FC = () => (
@@ -47,10 +49,12 @@ const AppRouter: React.FC = () => (
             <Route exact path={ROUTES.READ_WORK}      component={ReadWorkPage} />
             <Route exact path={ROUTES.COLLABORATION}  component={CollaborationPage} />
             <Route exact path={ROUTES.JOBS}           component={JobsPage} />
+            <Route exact path={ROUTES.PAYMENT_CALLBACK} component={PaymentCallbackPage} />
             <Route exact path={ROUTES.NOTIFICATIONS}  component={NotificationsPage} />
             <Route exact path={ROUTES.COMMUNITY}      component={CommunityPage} />
             <Route exact path={ROUTES.SETTINGS}       component={SettingsPage} />
             <Route exact path={ROUTES.HELP}           component={HelpPage} />
+            <Route exact path={ROUTES.PREMIUM}        component={PremiumPage} />
             <Route exact path={ROUTES.PRIVACY}        component={PrivacyPage} />
             <Redirect from="/app" to={ROUTES.HOME} exact />
           </IonRouterOutlet>

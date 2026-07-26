@@ -1,52 +1,49 @@
 import { useState } from 'react';
-import { createDocument, Collections } from '@/firebase/firestore.helpers';
-import { useAuthStore } from '@/store/slices/authStore';
+import { initiatePayment } from '@/services/payment.service';
 import { Work } from '@/types';
 import { formatCurrency } from '@/utils';
-import { notify } from '@/features/notifications/notify';
+import { apiErrorMessage } from '@/utils/apiError';
 import Swal from '@/utils/swal';
 
-// TODO: replace with a real purchase via payment.service.ts (initiatePayment)
-// once the backend's Paystack/Flutterwave integration is verified. This
-// creates a completed Order directly so the unlock flow can be built and
-// tested end-to-end without a live payment provider.
+/**
+ * Starts a real purchase.
+ *
+ * This used to write a `completed` Order straight to Firestore, which unlocked
+ * the work without any money moving. The order is now created by the backend
+ * off a server-resolved price, and only reaches `completed` when the payment
+ * provider confirms it.
+ *
+ * `buy` does not resolve to a result: it hands the browser to the provider's
+ * hosted checkout. The purchase completes on `PaymentCallbackPage` when the
+ * provider sends the buyer back.
+ */
 export const useBuyWork = () => {
-  const { user } = useAuthStore();
   const [isBuying, setIsBuying] = useState(false);
 
-  const buy = async (work: Work): Promise<boolean> => {
-    if (!user) return false;
-    const result = await Swal.fire({
+  const buy = async (work: Work): Promise<void> => {
+    const confirmed = await Swal.fire({
       icon: 'question',
       title: `Unlock "${work.title}"?`,
       text: `Buy full access for ${formatCurrency(work.price ?? 0, work.currency)}.`,
       showCancelButton: true,
-      confirmButtonText: 'Buy Now',
+      confirmButtonText: 'Continue to payment',
       cancelButtonText: 'Cancel',
     });
-    if (!result.isConfirmed) return false;
+    if (!confirmed.isConfirmed) return;
 
     setIsBuying(true);
     try {
-      await createDocument(Collections.ORDERS, {
-        buyerId: user.id,
-        sellerId: work.authorId,
-        workId: work.id,
-        amount: work.price ?? 0,
-        currency: work.currency ?? 'NGN',
-        status: 'completed',
-      });
-      notify(work.authorId, '💰', `${user.displayName} purchased "${work.title}"`).catch(() => {});
-      await Swal.fire({
-        icon: 'success',
-        title: 'Purchase complete!',
-        text: 'You now have full access.',
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      return true;
-    } finally {
+      const { data } = await initiatePayment('work', work.id);
+      // Full-page navigation, not a router push — checkout is the provider's
+      // own domain. `isBuying` stays true; this page is going away.
+      window.location.href = data.data.paymentUrl;
+    } catch (err) {
       setIsBuying(false);
+      await Swal.fire({
+        icon: 'error',
+        title: "Couldn't start checkout",
+        text: apiErrorMessage(err),
+      });
     }
   };
 
