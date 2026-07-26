@@ -20,7 +20,7 @@ const AiPromptModal: React.FC<Props> = ({ isOpen, onClose, workType, onInsert })
   const topics = PROMPT_TOPICS[workType];
   const [topic, setTopic] = useState(topics[0]);
   const [input, setInput] = useState('');
-  const { generate, output, history, isGenerating } = useAiPrompts(workType);
+  const { generate, output, error, history, isGenerating } = useAiPrompts(workType);
 
   useEffect(() => {
     setTopic(topics[0]);
@@ -67,13 +67,20 @@ const AiPromptModal: React.FC<Props> = ({ isOpen, onClose, workType, onInsert })
               className="w-full border border-wilde-border rounded-lg px-3 py-2 text-sm resize-none" />
             <p className="text-right text-xs text-wilde-muted">{input.length}/100</p>
           </div>
+          {error && (
+            <div role="alert"
+              className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {output && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm leading-relaxed text-gray-700">
+            <div className="bg-gray-50 rounded-lg p-3 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
               {output}
             </div>
           )}
           <div className="flex gap-2">
-            <Button className="flex-1" isLoading={isGenerating}
+            {/* The server rejects an empty prompt — don't spend a round trip to find out. */}
+            <Button className="flex-1" isLoading={isGenerating} disabled={!input.trim()}
               onClick={() => generate(topic, input)}>Generate</Button>
             {output && (
               <Button className="flex-1" onClick={handleInsert}>Insert into work</Button>
