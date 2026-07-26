@@ -24,7 +24,8 @@ export const useCreateWork = () => {
       if (!user) throw new Error('Not signed in');
       return createDocument(Collections.WORKS, {
         authorId: user.uid, title: 'Untitled', type,
-        status: 'draft', viewCount: 0, likeCount: 0, tags: [], isPremium: false,
+        // No price: it is set at publish time, and its absence means free.
+        status: 'draft', viewCount: 0, likeCount: 0, tags: [],
       });
     },
     onSuccess: id => {

@@ -30,7 +30,7 @@ const SETTINGS_ITEMS: SettingsItem[] = [
   {
     label: 'Premium',
     icon: starOutline,
-    blockedReason: 'Needs payments',
+    route: ROUTES.PREMIUM,
   },
   {
     label: 'Payment Methods',

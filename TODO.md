@@ -46,19 +46,31 @@ work top to bottom within each group. Each item names the files involved.
 
 ## High priority — core value prop / trust
 
-- [ ] **Real AI Prompt generation** — `src/features/ai-assistant/hooks/useAiPrompts.ts`
-  always returns a templated sentence, never calls a real model.
-  **On hold (2026-07-24): needs a decision on how it should call a model** —
-  either wire it to `wilde-backend.onrender.com`'s `/api/ai/generate` (if that
-  endpoint actually exists) or add a minimal proxy so an LLM API key is never
-  shipped to the browser. Do not put a raw API key in frontend code.
-- [ ] **Real payments** — `src/features/marketplace/hooks/useBuyWork.ts` writes a
-  `completed` Order directly with no payment provider involved. Used by both
-  `MarketplacePage.tsx` and `ReadWorkPage.tsx`. `src/services/payment.service.ts`
-  (`initiatePayment`/`verifyPayment`) exists but is never called.
-  **On hold (2026-07-24): the backend's Paystack/Flutterwave integration isn't
-  built yet.** Needs backend work (provider keys, webhook verification) before
-  the frontend can be wired to anything real.
+- [x] **Real AI Prompt generation** (2026-07-26) — `useAiPrompts.ts` now calls
+  `POST /api/ai/generate` on the local backend, which holds the OpenAI key. The
+  backend validates `{workType, topic, prompt}`, builds the system prompt from
+  `prompt.templates.ts` (previously dead code — the service inlined its own and
+  interpolated the raw enum, asking the model for "a compelling short_story
+  prompt"), writes the `Prompts` record server-side and rate-limits per uid.
+  History moved to `GET /api/ai/prompts`: the old client query filtered on
+  `category` with no `userId`, which the Prompts rule rejects outright.
+  - The stored field was renamed `category` → `workType`. Records written by the
+    old fake generator keep `category` and no longer appear in history.
+  - **Needs a deploy**: two new `Prompts` composite indexes. The Admin SDK
+    bypasses rules but still needs indexes.
+- [x] **Real payments** (2026-07-26) — `useBuyWork.ts` no longer writes a
+  `completed` Order; it calls `POST /api/payments/initiate` and hands off to the
+  provider's checkout. The backend resolves the price from the Work / listing
+  document (the old endpoint took `amount` from the request body, so any caller
+  could set their own price), creates the pending Order, and settles it only on
+  signature-verified provider confirmation. Paystack and Flutterwave are both
+  wired; `stripe` was removed from the provider enum, having never had a service
+  behind it.
+  - New `PaymentCallbackPage` at `/app/payment/callback` handles the return leg.
+  - **Needs a deploy**: `firestore.rules` no longer allows client `create` on
+    `/Orders`. Until that lands, the free-unlock hole stays open.
+  - **Not yet exercised against live provider keys** — no test purchase has been
+    run end to end.
 - [x] **Google sign-in never creates a Firestore user profile** — fixed in
   `src/features/auth/hooks/useAuth.ts`: auto-provisions a `Users` doc for any
   non-password provider on first sign-in.
@@ -173,10 +185,15 @@ work top to bottom within each group. Each item names the files involved.
   - **EPUB deliberately dropped**: it's a ZIP container with a required
     manifest, which needs a zip dependency to produce something readers will
     actually open. A broken `.epub` is worse than not offering it.
-- [ ] **Premium upgrade** — still blocked. `/payments/initiate` returns **404**
-  (see structural note); Settings now says "Needs payments" instead of the
-  vaguer "Coming soon", and `usePremium.ts` documents why it is unreachable.
-  Same blocker as Real payments above.
+- [x] **Premium upgrade** (2026-07-26) — reachable. New `PremiumPage` at
+  `/app/settings/premium` (Settings → Premium is no longer blocked) lists the
+  benefits, quotes the price from `GET /api/payments/pricing/premium` so the
+  displayed price cannot drift from the charged one, and lets the buyer pick a
+  provider. `isPremium` is set by the backend on confirmed payment, never by the
+  client.
+  - "Payment Methods" is still blocked: providers hold the card details and
+    there is no saved-instrument flow, so there is nothing for the screen to
+    show yet.
 - [x] **Community (Posts/Groups)** — `usePosts.ts`/`useGroups.ts` rebuilt on
   Firestore (their `/community/*` endpoints 404). New `CommunityPage` at
   `/app/community` with Feed and Groups tabs: post to the feed, like a post,
@@ -245,8 +262,18 @@ empty**: `/api/health` returns `{"status":"ok"}` and every other route probed
 `/api/ai/generate`) returns **404**. Community, Chapters and Export have since
 been rebuilt directly on Firestore, matching the rest of the app.
 
-Still importing `api.service.ts` and therefore still dead: `payment.service.ts`,
-`marketplace.service.ts`, `jobs.service.ts`, `notifications.service.ts`,
-`auth.service.ts`, `usePremium.ts`. These were left in place rather than deleted
-because retiring the backend is a product decision — but nothing reachable calls
-them, and the endpoints they call do not exist.
+**Update (2026-07-26).** The backend in `../wilde-backend` is now the live
+source and runs locally; the Render deployment is stale and still needs
+redeploying from it. Its root cause was found: `initFirebase()` was never
+called, so every authenticated route returned "Invalid token" even for a valid
+one.
+
+The app deliberately stays Firestore-direct for ordinary reads and writes. The
+backend owns only what cannot live in a browser because it needs a secret or
+server-side trust: **AI generation** and **payments**. `payment.service.ts` and
+`usePremium.ts` are now live.
+
+Still importing `api.service.ts` and still dead: `marketplace.service.ts`
+(`/market/buy` does not exist server-side), `jobs.service.ts`,
+`notifications.service.ts`, `auth.service.ts`. Left in place rather than deleted
+because retiring them is a product decision — but nothing reachable calls them.

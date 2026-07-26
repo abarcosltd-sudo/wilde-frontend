@@ -149,15 +149,15 @@ service cloud.firestore {
         request.auth.uid == resource.data.sellerId
       );
       /**
-       * An Order both unlocks paywalled content and qualifies its buyer to leave
-       * a review, so it must at least be created in the caller's own name.
+       * Created server-side only, by `POST /api/payments/initiate`, and moved to
+       * `completed` only by verified provider confirmation (the Admin SDK
+       * bypasses these rules).
        *
-       * This is not proof of payment: no provider is wired up yet, so a
-       * determined user can still forge a completed order for themselves. That
-       * can only be closed by creating orders server-side off a verified payment
-       * webhook — see the payments item in TODO.md.
+       * Client create is withheld deliberately: an Order unlocks paywalled
+       * content and qualifies its buyer to leave a review, so allowing the
+       * client to write one — as this rule previously did — let any user forge a
+       * completed order and read any paid work for free.
        */
-      allow create: if isAuth() && request.auth.uid == request.resource.data.buyerId;
     }
 
     match /Prompts/{promptId} {

@@ -6,20 +6,31 @@ const BOOK_TYPES: WorkType[] = ['short_story', 'long_work', 'poetry', 'screenpla
 
 export const useMarketplace = (tab: string) => {
   const { data: works = [], isPending: isWorksLoading } = useQuery({
-    queryKey: ['market-works', tab],
-    queryFn: async () => {
-      const published = await queryDocuments<Work>(Collections.WORKS, [
-        where('status', '==', 'published'), limit(50),
-      ]);
-      const priced = published.filter(w => (w.price ?? 0) > 0);
-      const inTab = tab === 'Books' ? priced.filter(w => BOOK_TYPES.includes(w.type))
-        : tab === 'Art' ? priced.filter(w => w.type === 'artwork')
-        : priced;
-      return inTab
-        .sort((a, b) => (b.price ?? 0) - (a.price ?? 0))
-        .slice(0, 20);
-    },
+    // One fetch shared by every tab — the tab only narrows it client-side, so
+    // switching tabs doesn't re-read Firestore.
+    queryKey: ['market-works'],
+    queryFn: () => queryDocuments<Work>(Collections.WORKS, [
+      // Filtered and sorted server-side, against the existing
+      // `Works {status ASC, price DESC}` composite index.
+      //
+      // This used to fetch 50 published works with no ordering and filter to
+      // priced ones in memory, so once more than 50 published works existed,
+      // works actually for sale could silently never appear. `price > 0` also
+      // excludes documents with no price field at all, which is every work
+      // published before pricing existed.
+      where('status', '==', 'published'),
+      where('price', '>', 0),
+      orderBy('price', 'desc'),
+      limit(50),
+    ]),
   });
+
+  // Type still splits client-side: filtering it server-side would need a third
+  // composite index per tab, and the 50 priced works above are already narrow.
+  const worksInTab = (tab === 'Books' ? works.filter(w => BOOK_TYPES.includes(w.type))
+    : tab === 'Art' ? works.filter(w => w.type === 'artwork')
+    : works
+  ).slice(0, 20);
 
   const { data: listings = [], isPending: isListingsLoading } = useQuery({
     queryKey: ['market-listings'],
@@ -29,7 +40,7 @@ export const useMarketplace = (tab: string) => {
   });
 
   return {
-    works,
+    works: worksInTab,
     listings,
     isLoading: tab === 'Services' ? isListingsLoading : isWorksLoading,
   };

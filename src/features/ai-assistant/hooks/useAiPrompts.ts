@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AxiosError } from 'axios';
 import api from '@/services/api.service';
 import { useAuthStore } from '@/store/slices/authStore';
+import { apiErrorMessage } from '@/utils/apiError';
 import { ApiResponse, WorkType } from '@/types';
 
 export interface PromptRecord {
@@ -19,13 +19,6 @@ export interface PromptRecord {
  * cuts off well before the server gives up (especially on a cold start).
  */
 const GENERATE_TIMEOUT_MS = 60_000;
-
-const messageFor = (err: unknown) => {
-  const response = (err as AxiosError<{ message?: string }>).response;
-  // No response at all — offline, DNS, CORS, or the request timed out.
-  if (!response) return "Couldn't reach the AI. Check your connection and try again.";
-  return response.data?.message ?? 'Something went wrong generating that. Try again.';
-};
 
 /**
  * Generation and history both run through the backend: the model call needs an
@@ -69,7 +62,7 @@ export const useAiPrompts = (workType: WorkType) => {
       setOutput(record.output);
       queryClient.invalidateQueries({ queryKey: historyKey });
     },
-    onError: (err) => setError(messageFor(err)),
+    onError: (err) => setError(apiErrorMessage(err, 'Something went wrong generating that. Try again.')),
   });
 
   const generate = (topic: string, prompt: string) => mutate({ topic, prompt });

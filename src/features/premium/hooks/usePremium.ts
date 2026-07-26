@@ -1,32 +1,27 @@
 import { useMutation } from '@tanstack/react-query';
-import api from '@/services/api.service';
-import { auth } from '@/firebase/config';
+import { initiatePayment, PaymentProvider } from '@/services/payment.service';
 import { useAuthStore } from '@/store/slices/authStore';
+import { useUiStore } from '@/store/slices/uiStore';
+import { apiErrorMessage } from '@/utils/apiError';
 
 /**
- * NOT REACHABLE. Settings shows "Premium" as blocked ("Needs payments").
+ * Starts a premium upgrade.
  *
- * `/payments/initiate` returns 404 — the external API only exposes
- * `/api/health`. Wiring a button to this would produce a dead end, so the entry
- * point stays disabled until a payment provider is actually connected. Same
- * blocker as `useBuyWork`, which records Orders without moving money.
+ * The price lives on the server (`PREMIUM_PRICE_NGN`) — this used to post an
+ * `amount` of its own, which the backend then charged. `isPremium` is set by
+ * the backend when the provider confirms payment, never by the client.
  */
 export const usePremium = () => {
   const { user } = useAuthStore();
+  const showToast = useUiStore(s => s.showToast);
 
   const { mutate: upgrade, isPending } = useMutation({
-    mutationFn: (provider: 'paystack' | 'flutterwave') =>
-      api.post('/payments/initiate', {
-        // From Auth, not the profile document, which no longer carries an email.
-        email: auth.currentUser?.email,
-        amount: 2999,
-        currency: 'NGN',
-        provider,
-        metadata: { type: 'premium_upgrade', userId: user?.uid },
-      }),
-    onSuccess: ({ data }) => {
-      window.location.href = data.data.paymentUrl;
+    mutationFn: async (provider: PaymentProvider = 'paystack') => {
+      const { data } = await initiatePayment('premium', undefined, provider);
+      return data.data;
     },
+    onSuccess: (payment) => { window.location.href = payment.paymentUrl; },
+    onError: (err) => showToast(apiErrorMessage(err), 'danger'),
   });
 
   return { isPremium: user?.isPremium ?? false, upgrade, isPending };

@@ -25,14 +25,24 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How do I charge for a work?',
-    a: 'Set a price on the work and publish it. Readers see a free preview of roughly '
-     + 'half the text, then a prompt to unlock the rest.',
+    a: 'Tap Publish in the Writing Studio and choose "Sell it", then set a price. That '
+     + 'is the only place a price can be set — a draft has no price. Once published, the '
+     + 'work appears in the Marketplace, and readers see a free preview of roughly half '
+     + 'the text before a prompt to unlock the rest. Publishing again lets you change the '
+     + 'price or make it free.',
+  },
+  {
+    q: 'How do I offer a service?',
+    a: 'Open the Marketplace, switch to the Services tab and tap "Offer a service". You '
+     + 'set a title, what you offer, your specialties and a price per project. Interested '
+     + 'people reach you through the Hire button on your listing.',
   },
   {
     q: 'When do I get paid?',
-    a: 'Payouts are not live yet. Purchases are currently recorded against your account '
-     + 'and shown in your Sales total, but no payment provider is connected, so no money '
-     + 'moves. We will contact you before that changes.',
+    a: 'Buyers pay by card through Paystack or Flutterwave, and a completed sale is added '
+     + 'to your Sales total. Payouts to your own bank account are not automated yet — the '
+     + 'money sits with the platform until we arrange a transfer with you. We will contact '
+     + 'you before that changes.',
   },
   {
     q: 'Who can leave a review on my profile?',
