@@ -9,6 +9,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet" />
+  <script>
+    // Runs before the first paint. React sets this too, but not until the
+    // bundle has parsed — without this, opening the app at night flashes the
+    // full light theme first. Kept deliberately tiny and duplicated rather than
+    // imported: a module import here would defeat the point.
+    //
+    // The saved preference has to be read here as well, or someone who has
+    // pinned the theme to light still gets a dark flash after 6pm. The key and
+    // its JSON encoding are set by `utils/storage` + `themeStore`; if either
+    // changes, this has to change with it.
+    (function () {
+      var dark;
+      var byClock = function () {
+        var h = new Date().getHours();
+        return h >= 18 || h < 6;
+      };
+      try {
+        var raw = localStorage.getItem('wilde_theme');
+        var pref = raw ? JSON.parse(raw) : 'auto';
+        dark = pref === 'dark' ? true : pref === 'light' ? false : byClock();
+      } catch (e) {
+        // Private mode, blocked storage, or a corrupted value — the clock is
+        // still a better guess than always starting light.
+        dark = byClock();
+      }
+      if (dark) document.documentElement.classList.add('dark');
+    })();
+  </script>
 </head>
 <body>
   <div id="root"></div>

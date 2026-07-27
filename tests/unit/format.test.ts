@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { formatTimeAgo, formatDate, toMillis } from '@/utils/format';
+import { formatTimeAgo, formatDate, toMillis, formatBytes } from '@/utils/format';
 
 /**
  * Regression cover for the `createdAt` bug: Firestore writes these fields as
@@ -62,5 +62,36 @@ describe('date formatting', () => {
       expect(toMillis(null)).toBe(0);
       expect(toMillis('garbage')).toBe(0);
     });
+  });
+});
+
+/**
+ * These strings appear in the upload limit message the user is held to, so a
+ * size that reads as "5.0MB" against a "5MB" cap, or rounds 5.4MB down to "5MB"
+ * and makes the refusal look wrong, is the failure worth guarding.
+ */
+describe('formatBytes', () => {
+  const MB = 1024 * 1024;
+
+  it('drops a meaningless trailing zero', () => {
+    expect(formatBytes(5 * MB)).toBe('5MB');
+  });
+
+  it('keeps one decimal where it changes the reading', () => {
+    expect(formatBytes(5.4 * MB)).toBe('5.4MB');
+  });
+
+  it('never renders an over-limit file as being exactly at the limit', () => {
+    expect(formatBytes(5.04 * MB)).toBe('5.1MB');
+    expect(formatBytes(5.04 * MB)).not.toBe(formatBytes(5 * MB));
+  });
+
+  it('scales down to KB and bytes', () => {
+    expect(formatBytes(2048)).toBe('2KB');
+    expect(formatBytes(512)).toBe('512B');
+  });
+
+  it('stops showing decimals once they stop mattering', () => {
+    expect(formatBytes(128.4 * MB)).toBe('129MB');
   });
 });

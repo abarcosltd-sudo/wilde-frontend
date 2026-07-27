@@ -46,7 +46,7 @@ const CollaboratorPickerModal: React.FC<Props> = ({ isOpen, onClose, initialSele
         <div className="flex items-center justify-between mb-4">
           <button onClick={onClose}
             aria-label="Close"
-            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
+            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-wilde-subtle">
             <IonIcon icon={closeOutline} aria-hidden="true" />
           </button>
           <h2 className="font-bold">Invite Collaborators</h2>
@@ -57,7 +57,7 @@ const CollaboratorPickerModal: React.FC<Props> = ({ isOpen, onClose, initialSele
         <div className="overflow-y-auto" style={{ maxHeight: '50vh' }}>
           {filtered.map(u => (
             <button key={u.id} type="button" onClick={() => toggle(u.id)}
-              className="flex items-center justify-between w-full py-3 border-b border-gray-100">
+              className="flex items-center justify-between w-full py-3 border-b border-wilde-border">
               <div className="flex items-center gap-3">
                 <Avatar name={u.displayName} src={u.photoURL} size="sm" />
                 <div className="text-left">

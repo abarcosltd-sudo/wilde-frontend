@@ -19,15 +19,19 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', circle }) =>
   <span
     aria-hidden="true"
     className={
-      'relative block overflow-hidden bg-gray-200 ' +
+      'relative block overflow-hidden bg-wilde-sunken ' +
       (circle ? 'rounded-full ' : 'rounded ') +
       className
     }
   >
     {/* Sweeping highlight. Hidden when the user has asked for reduced motion —
-        the static grey bar still reads as a loading placeholder on its own. */}
+        the static grey bar still reads as a loading placeholder on its own.
+
+        Stays white in both themes but far fainter at night: a highlight is
+        light passing over the bar, so tinting it to the dark surface would make
+        the sweep read as a shadow travelling the wrong way. */}
     <span className="absolute inset-0 -translate-x-full animate-shimmer motion-reduce:hidden
-      bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+      bg-gradient-to-r from-transparent via-white/70 dark:via-white/10 to-transparent" />
   </span>
 );
 

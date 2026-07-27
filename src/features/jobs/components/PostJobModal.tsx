@@ -47,7 +47,7 @@ const PostJobModal: React.FC<Props> = ({ isOpen, onClose, onPosted }) => {
         <div className="flex items-center justify-between mb-4">
           <button onClick={onClose}
             aria-label="Close"
-            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
+            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-wilde-subtle">
             <IonIcon icon={closeOutline} aria-hidden="true" />
           </button>
           <h2 className="font-bold">Post a Job</h2>

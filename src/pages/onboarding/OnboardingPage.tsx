@@ -47,7 +47,7 @@ const OnboardingPage: React.FC = () => {
                   onClick={() => toggleRole(r.value as CreativeRole)}
                   className={'flex items-center gap-3 border rounded-lg px-4 py-3 text-sm font-medium transition-colors ' +
                     (selectedRoles.includes(r.value as CreativeRole)
-                      ? 'bg-wilde-black text-white border-wilde-black'
+                      ? 'bg-wilde-black text-wilde-on-ink border-wilde-black'
                       : 'border-wilde-border')}>
                   <IonIcon icon={r.icon} aria-hidden="true" /><span>{r.label}</span>
                 </button>
@@ -70,7 +70,7 @@ const OnboardingPage: React.FC = () => {
           <h2 className="text-3xl font-black text-center whitespace-pre-line">{s.headline}</h2>
           <div className="grid grid-cols-3 gap-3">
             {s.icons.map((icon, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl aspect-square flex items-center justify-center text-3xl">
+              <div key={i} className="bg-wilde-subtle rounded-xl aspect-square flex items-center justify-center text-3xl">
                 <IonIcon icon={icon} aria-hidden="true" />
               </div>
             ))}
@@ -81,7 +81,7 @@ const OnboardingPage: React.FC = () => {
             <button className="text-sm text-wilde-muted min-h-11 px-2 -ml-2" onClick={() => setSlide(SLIDES.length)}>Skip</button>
             <div className="flex gap-1">
               {[...SLIDES, null].map((_, i) => (
-                <div key={i} className={'w-2 h-2 rounded-full ' + (i === slide ? 'bg-wilde-black' : 'bg-gray-300')} />
+                <div key={i} className={'w-2 h-2 rounded-full ' + (i === slide ? 'bg-wilde-black' : 'bg-wilde-sunken')} />
               ))}
             </div>
             <Button onClick={() => setSlide(s => s + 1)}>Next</Button>

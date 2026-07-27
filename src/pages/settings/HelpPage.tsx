@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, chevronDownOutline, mailOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
@@ -73,10 +74,10 @@ const HelpPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center gap-2 mb-4 -ml-2">
             <IconButton icon={chevronBackOutline} label="Go back" onClick={() => history.goBack()} />
-            <h1 className="font-bold text-lg">Help &amp; Support</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Help &amp; Support</h1>
           </div>
 
           <div className="border border-wilde-border rounded-xl overflow-hidden mb-6">
@@ -88,10 +89,10 @@ const HelpPage: React.FC = () => {
                     onClick={() => setOpenIndex(isOpen ? null : i)}
                     aria-expanded={isOpen}
                     className="flex items-center justify-between gap-3 w-full text-left px-3 py-3
-                      transition-colors active:bg-gray-50">
+                      transition-colors active:bg-wilde-subtle">
                     <span className="text-sm font-medium">{faq.q}</span>
                     <IonIcon icon={chevronDownOutline} aria-hidden="true"
-                      className={'text-gray-500 shrink-0 transition-transform ' +
+                      className={'text-wilde-muted shrink-0 transition-transform ' +
                         (isOpen ? 'rotate-180' : '')} />
                   </button>
                   {isOpen && (
@@ -111,7 +112,7 @@ const HelpPage: React.FC = () => {
           <a
             href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('WILDE support request')}`}
             className="flex items-center justify-center gap-2 w-full border border-wilde-black
-              rounded-lg py-2.5 text-sm font-medium transition-colors active:bg-gray-50">
+              rounded-lg py-2.5 text-sm font-medium transition-colors active:bg-wilde-subtle">
             <IonIcon icon={mailOutline} aria-hidden="true" />
             Contact support
           </a>

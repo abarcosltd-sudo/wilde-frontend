@@ -43,7 +43,7 @@ const PaymentCallbackPage: React.FC = () => {
   const body = () => {
     if (!reference) {
       return (
-        <Status icon={alertCircle} tone="text-red-500" title="Missing payment reference"
+        <Status icon={alertCircle} tone="text-red-500 dark:text-red-400" title="Missing payment reference"
           detail="This page was opened without a payment to confirm.">
           <Button onClick={() => history.replace(ROUTES.MARKET)}>Back to Marketplace</Button>
         </Status>
@@ -61,7 +61,7 @@ const PaymentCallbackPage: React.FC = () => {
 
     if (error) {
       return (
-        <Status icon={alertCircle} tone="text-red-500" title="Couldn't confirm payment"
+        <Status icon={alertCircle} tone="text-red-500 dark:text-red-400" title="Couldn't confirm payment"
           detail={apiErrorMessage(error)}>
           <Button onClick={() => refetch()}>Try again</Button>
         </Status>
@@ -70,7 +70,7 @@ const PaymentCallbackPage: React.FC = () => {
 
     if (data?.status === 'completed') {
       return (
-        <Status icon={checkmarkCircle} tone="text-green-600" title="Payment complete"
+        <Status icon={checkmarkCircle} tone="text-green-600 dark:text-green-400" title="Payment complete"
           detail={data.kind === 'premium'
             ? 'Your account is now Premium.'
             : 'You now have full access.'}>
@@ -90,7 +90,7 @@ const PaymentCallbackPage: React.FC = () => {
 
     if (data?.status === 'disputed') {
       return (
-        <Status icon={alertCircle} tone="text-red-500" title="Payment needs review"
+        <Status icon={alertCircle} tone="text-red-500 dark:text-red-400" title="Payment needs review"
           detail="The amount received didn't match this order, so it hasn't been applied. Please contact support."
         >
           <Button onClick={() => history.replace(ROUTES.HELP)}>Get help</Button>
@@ -120,7 +120,7 @@ const Status: React.FC<{
 }> = ({ icon, tone, title, detail, children }) => (
   <div role="status" className="flex flex-col items-center gap-3 text-center max-w-xs">
     <IonIcon icon={icon} aria-hidden="true" className={`text-5xl ${tone}`} />
-    <h1 className="font-bold text-lg">{title}</h1>
+    <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
     <p className="text-sm text-wilde-muted">{detail}</p>
     <div className="mt-2 w-full">{children}</div>
   </div>

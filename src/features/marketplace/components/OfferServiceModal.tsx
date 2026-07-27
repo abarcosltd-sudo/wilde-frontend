@@ -78,7 +78,7 @@ const OfferServiceModal: React.FC<Props> = ({ isOpen, onClose, onListed }) => {
         <div className="flex items-center justify-between mb-4">
           <button onClick={onClose}
             aria-label="Close"
-            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
+            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-wilde-subtle">
             <IonIcon icon={closeOutline} aria-hidden="true" />
           </button>
           <h2 className="font-bold">Offer a Service</h2>
@@ -134,7 +134,7 @@ const OfferServiceModal: React.FC<Props> = ({ isOpen, onClose, onListed }) => {
                 className="flex-1 min-w-0 border border-wilde-border rounded-lg px-3 py-2 text-sm" />
             </div>
             {isBelowMinimum && (
-              <p id="svc-price-help" className="text-xs text-red-600 mt-1">
+              <p id="svc-price-help" className="text-xs text-red-600 dark:text-red-400 mt-1">
                 Minimum is {formatCurrency(minimum, currency)}.
               </p>
             )}

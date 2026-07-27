@@ -45,5 +45,21 @@ export const formatCount = (n: number): string => {
   return String(n);
 };
 
+/**
+ * File sizes for humans.
+ *
+ * Rounds up, never to nearest: these strings sit beside an upload limit the
+ * user has just been held to, and a 5.04MB file reported as "5MB" against a
+ * "5MB" cap reads as a bug in the app rather than a file that's too big. A
+ * trailing ".0" is dropped for the same reason — false precision on a limit.
+ */
+export const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes}B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.ceil(kb)}KB`;
+  const mb = kb / 1024;
+  return `${mb < 10 ? Math.ceil(mb * 10) / 10 : Math.ceil(mb)}MB`;
+};
+
 export const truncate = (str: string, maxLen: number) =>
   str.length > maxLen ? str.slice(0, maxLen) + '…' : str;

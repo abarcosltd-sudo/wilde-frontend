@@ -254,6 +254,63 @@ timeline.
 previously-denied writes are liking a post and joining a group), and the new
 composite indexes. Everything else in this app has only ever run against mocks.
 
+## Outstanding (audit, 2026-07-26)
+
+Everything below is unbuilt, dead, or undecided — none of it is a regression.
+Backend-side counterparts are tracked in `../wilde-backend/TODO.md`.
+
+### Blocking anything else
+
+- [ ] **Payments have never touched a real provider.** Initiate → redirect →
+  webhook → fulfilment is verified by typecheck and unit tests only. The webhook
+  is what settles a purchase when the buyer closes the tab, and it **cannot be
+  exercised locally without a tunnel** (ngrok or similar) pointed at
+  `POST /api/payments/webhook/paystack`. Until that has run against Paystack test
+  keys, treat payments as unproven rather than done.
+- [ ] **Deploy the Firestore rules and indexes.** The marketplace query now
+  depends on the `Works {status ASC, price DESC}` composite index — without it
+  the Marketplace fails with `FAILED_PRECONDITION` rather than merely showing
+  nothing. The `Prompts` indexes and the `Orders`/`Prompts` rule changes are in
+  the same deploy: `firebase deploy --only firestore:indexes,firestore:rules`.
+
+### Native shell — blocks notifications
+
+- [ ] **Capacitor is configured but not installed.** `capacitor.config.ts`
+  declares the appId and the PushNotifications / LocalNotifications plugins, but
+  `package.json` has **no `@capacitor/*` dependency at all**, so `npx cap` won't
+  run and there is no native build. The backend's CORS allow-list already admits
+  the native origins in anticipation.
+- [ ] **Writing Reminders** stays blocked ("Needs notifications") on the above —
+  the capability genuinely does not exist, so a stored preference would act on
+  nothing. The backend has a `Reminders` collection and a `reminderJob`, but the
+  job is never scheduled.
+
+### Stale or dead
+
+- [ ] **"Payment Methods" setting is stale copy.** It still says "Needs
+  payments", but payments work. What is actually missing is a saved-card vault —
+  and since the provider holds the card and WILDE never sees it, that is a
+  provider-side tokenisation flow, not a local feature. Build it or retire the
+  row; the current label is now misleading.
+- [ ] **Four dead service modules** still import `api.service.ts` and call
+  endpoints nothing reaches: `auth.service.ts`, `jobs.service.ts`,
+  `marketplace.service.ts`, `notifications.service.ts`. Retiring them is a
+  product decision (see Structural note), but nothing reachable calls them.
+- [ ] **`quill` is an unused dependency** — zero imports anywhere in `src`. The
+  editor is the hand-rolled `RichTextEditor`. Safe to drop.
+
+### Features not started
+
+- [ ] **Messaging.** `HireRequest` is one-directional: the recipient sees a
+  notification and replies out of band. No threads, no reply path in-app.
+- [ ] **Seller payouts.** Money reaches the platform account and stops there.
+  `totalSales` is a counter, not a balance. The Help page states this honestly —
+  keep the two in step if it changes.
+- [ ] **Search doesn't scale.** Explore filters one cached page in memory. Fine
+  at current volume; needs real full-text search before it isn't.
+- [ ] **EPUB export** — deliberately dropped, needs a zip dependency to produce
+  a container readers will open. A broken `.epub` is worse than not offering it.
+
 ## Structural note
 
 The external backend at `wilde-backend.onrender.com` is **live but effectively

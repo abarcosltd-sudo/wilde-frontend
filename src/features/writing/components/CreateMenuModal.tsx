@@ -39,13 +39,13 @@ const CreateMenuModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
         {OPTIONS.map(opt => (
           <button key={opt.type} onClick={() => handleSelect(opt.type)} disabled={isPending}
-            className="flex items-center justify-between w-full py-4 border-b border-gray-100
-              transition-colors active:bg-gray-50 disabled:opacity-50">
+            className="flex items-center justify-between w-full py-4 border-b border-wilde-border
+              transition-colors active:bg-wilde-subtle disabled:opacity-50">
             <div className="flex items-center gap-3">
               <IonIcon icon={opt.icon} aria-hidden="true" className="text-lg" />
               <span className="text-sm font-medium">{opt.label}</span>
             </div>
-            <IonIcon icon={chevronForwardOutline} aria-hidden="true" className="text-gray-500" />
+            <IonIcon icon={chevronForwardOutline} aria-hidden="true" className="text-wilde-muted" />
           </button>
         ))}
       </IonContent>

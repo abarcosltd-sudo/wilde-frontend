@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent } from '@ionic/react';
 import { menuOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
@@ -25,7 +26,7 @@ const ProfileDashPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-base">Your Studio</h2>
             <div className="flex items-center gap-2">
@@ -65,19 +66,19 @@ const ProfileDashPage: React.FC = () => {
               <span className="text-xs text-wilde-muted">All Time</span>
             </div>
             <div className="grid grid-cols-2 gap-3" role="status" aria-busy={isAnalyticsLoading}>
-              <div className="bg-gray-50 rounded-lg p-3">
+              <div className="bg-wilde-subtle rounded-lg p-3">
                 <p className="text-xs text-wilde-muted">Views</p>
                 {isAnalyticsLoading
                   ? <Skeleton className="h-4 w-12 mt-1" />
                   : <p className="font-bold">{formatCount(analytics?.views ?? 0)}</p>}
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
+              <div className="bg-wilde-subtle rounded-lg p-3">
                 <p className="text-xs text-wilde-muted">Engagement</p>
                 {isAnalyticsLoading
                   ? <Skeleton className="h-4 w-12 mt-1" />
                   : <p className="font-bold">{formatCount(analytics?.engagement ?? 0)}</p>}
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+              <div className="bg-wilde-subtle rounded-lg p-3 col-span-2">
                 <p className="text-xs text-wilde-muted">Revenue</p>
                 {isAnalyticsLoading
                   ? <Skeleton className="h-4 w-20 mt-1" />

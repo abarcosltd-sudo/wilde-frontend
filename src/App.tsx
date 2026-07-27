@@ -1,9 +1,9 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { IonApp } from '@ionic/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AppRouter from './routes/AppRouter';
-import { SplashScreen } from './pages/auth/SplashPage';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import Toast from '@/components/ui/Toast';
 
 const queryClient = new QueryClient({
@@ -25,6 +25,8 @@ const queryClient = new QueryClient({
 
 const App: React.FC = () => {
   useAuth()
+  // Owns the `.dark` class on <html> for the whole app.
+  useTheme()
   return (
     <QueryClientProvider client={queryClient}>
       <IonApp>

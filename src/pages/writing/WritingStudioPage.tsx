@@ -1,32 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, IonSpinner,
+  IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon,
 } from '@ionic/react';
 import {
   chevronBackOutline, listOutline, textOutline, swapHorizontalOutline,
-  imageOutline, imagesOutline, sparklesOutline, addOutline, trashOutline,
-  downloadOutline, closeOutline,
+  sparklesOutline, addOutline, trashOutline, downloadOutline,
 } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useWritingStore } from '@/store/slices/writingStore';
 import { useWorkEditor, PublishPricing } from '@/features/writing/hooks/useWorkEditor';
 import { useChapters } from '@/features/writing/hooks/useChapters';
 import { chapterLabel } from '@/features/writing/chapterLabel';
-import { uploadFile, getStoragePath } from '@/firebase/storage.helpers';
+import { getStoragePath } from '@/firebase/storage.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
-import { useUiStore } from '@/store/slices/uiStore';
 import { useUsers } from '@/hooks/useUser';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { ROUTES } from '@/constants';
 import { User, WorkType } from '@/types';
 import Avatar from '@/components/ui/Avatar';
 import IconButton from '@/components/ui/IconButton';
 import Tooltip from '@/components/ui/Tooltip';
 import RichTextEditor, { RichTextEditorHandle } from '@/components/ui/RichTextEditor';
+import UploadDropzone from '@/components/ui/UploadDropzone';
 import CollaboratorPickerModal from '@/features/writing/components/CollaboratorPickerModal';
 import PublishModal from '@/features/writing/components/PublishModal';
 import AiPromptModal from '@/features/ai-assistant/components/AiPromptModal';
 import { exportWork, EXPORT_FORMATS, ExportFormat } from '@/features/premium/services/export.service';
-import { escapeHtml } from '@/utils';
+import { escapeHtml, formatBytes } from '@/utils';
 import Swal from '@/utils/swal';
 
 const TOOLBAR_BUTTONS = [
@@ -52,7 +52,7 @@ const COVER_MAX_BYTES = 5 * 1024 * 1024;
 
 const TOOLBAR_BUTTON_CLASS =
   'min-w-11 min-h-9 flex items-center justify-center text-xs px-2 py-1 border border-wilde-border ' +
-  'rounded transition-colors active:bg-gray-100 focus-visible:outline-none ' +
+  'rounded transition-colors active:bg-wilde-subtle focus-visible:outline-none ' +
   'focus-visible:ring-2 focus-visible:ring-wilde-black';
 
 const TYPE_CONFIG: Record<WorkType, {
@@ -75,13 +75,10 @@ const WritingStudioPage: React.FC = () => {
   const { user } = useAuthStore();
   const { currentWork, updateContent, updateTitle, setCoverImage, setCollaborators, isSaving } = useWritingStore();
   const { load, save, publish } = useWorkEditor(workId);
-  const showToast = useUiStore(s => s.showToast);
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isAiPromptOpen, setAiPromptOpen] = useState(false);
-  const [isUploadingImage, setUploadingImage] = useState(false);
   const [alignIndex, setAlignIndex] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<RichTextEditorHandle>(null);
 
   useEffect(() => { load(); }, [workId]);
@@ -179,40 +176,18 @@ const WritingStudioPage: React.FC = () => {
     await exportWork(currentWork?.title || 'Untitled', body, format as ExportFormat);
   };
 
-  const handleImagePick = () => fileInputRef.current?.click();
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset immediately so picking the same file again still fires a change.
-    e.target.value = '';
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      showToast('That file is not an image. Choose a JPG, PNG or WebP.', 'danger');
-      return;
-    }
-    if (file.size > COVER_MAX_BYTES) {
-      showToast('That image is larger than 5MB. Choose a smaller one.', 'danger');
-      return;
-    }
-
-    setUploadingImage(true);
-    try {
-      const url = await uploadFile(getStoragePath.workCover(workId), file);
-      setCoverImage(url);
-      // The URL is only persisted to Firestore on save, so say so rather than
-      // letting the user assume the cover is already live.
-      showToast('Cover added — save or publish to keep it', 'success');
-    } catch (err) {
-      // Swallowing this entirely made a bucket misconfiguration look like a
-      // transient glitch. A blocked CORS preflight surfaces here as an opaque
-      // network error, so the code is the only clue worth keeping.
-      console.error('Cover image upload failed:', err);
-      showToast("Couldn't upload that image. Check your connection and try again.", 'danger');
-    } finally {
-      setUploadingImage(false);
-    }
-  };
+  /**
+   * Validation, preview, byte progress and retry all live in the hook, so the
+   * page only has to say where the file goes and what to do with the URL.
+   *
+   * Failures stay inside the drop target rather than going out as a toast: a
+   * toast that has already faded leaves nothing to retry from.
+   */
+  const coverUpload = useFileUpload({
+    path: () => getStoragePath.workCover(workId),
+    maxBytes: COVER_MAX_BYTES,
+    onUploaded: url => setCoverImage(url),
+  });
 
   const handleRemoveCover = async () => {
     const result = await Swal.fire({
@@ -223,7 +198,12 @@ const WritingStudioPage: React.FC = () => {
       confirmButtonText: 'Remove',
       cancelButtonText: 'Cancel',
     });
-    if (result.isConfirmed) setCoverImage('');
+    if (result.isConfirmed) {
+      setCoverImage('');
+      // Clears the local preview too, which would otherwise keep showing the
+      // image the user just removed.
+      coverUpload.reset();
+    }
   };
 
   const handleSaveDraft = async () => {
@@ -281,17 +261,9 @@ const WritingStudioPage: React.FC = () => {
               placeholder="Untitled"
               className="flex-1 min-w-0 text-center font-bold text-base bg-transparent focus:outline-none" />
             <IconButton icon={sparklesOutline} label="AI Prompt" onClick={() => setAiPromptOpen(true)} />
-            {/* Artwork already has a full-size upload target in the body, so the
-                header control would be a second way to do the same thing. */}
-            {type !== 'artwork' && (
-              <IconButton
-                icon={hasCover ? imagesOutline : imageOutline}
-                label={isUploadingImage
-                  ? 'Uploading cover image…'
-                  : hasCover ? 'Change cover image' : 'Add cover image'}
-                disabled={isUploadingImage}
-                onClick={handleImagePick} />
-            )}
+            {/* The cover strip below is now always present and is itself the
+                picker, so a header button would be a second way to do the same
+                thing — and one that can't be dropped onto. */}
             <IconButton icon={downloadOutline} label="Export" onClick={handleExport} />
           </div>
           {config.showToolbar && (
@@ -316,27 +288,18 @@ const WritingStudioPage: React.FC = () => {
             </div>
           )}
           {/* Shows what the timeline card will use, so the choice is verifiable
-              here rather than only after publishing. */}
-          {type !== 'artwork' && (hasCover || isUploadingImage) && (
-            <div className="flex items-center gap-3 px-4 py-2 border-t border-wilde-border">
-              <div className="w-16 h-10 rounded-md bg-gray-100 overflow-hidden shrink-0
-                flex items-center justify-center">
-                {isUploadingImage
-                  ? <IonSpinner name="crescent" className="scale-75" />
-                  : <img src={currentWork!.coverImageUrl} alt=""
-                      className="w-full h-full object-cover" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold">Cover image</p>
-                <p className="text-xs text-wilde-muted">
-                  {isUploadingImage ? 'Uploading…' : 'Shown as the thumbnail on the timeline'}
-                </p>
-              </div>
-              {hasCover && !isUploadingImage && (
-                <IconButton icon={closeOutline} label="Remove cover image"
-                  className="!min-w-9 !min-h-9 !text-base"
-                  onClick={handleRemoveCover} />
-              )}
+              here rather than only after publishing. Kept on screen even with no
+              cover set: a drop target the user can't see isn't one they'll use. */}
+          {type !== 'artwork' && (
+            <div className="px-4 py-2 border-t border-wilde-border">
+              <UploadDropzone
+                variant="strip"
+                label="cover image"
+                upload={coverUpload}
+                currentUrl={currentWork?.coverImageUrl}
+                hint="Drag an image here, or tap — it becomes the timeline thumbnail"
+                doneHint="Added — save or publish to keep it"
+                onRemove={hasCover ? handleRemoveCover : undefined} />
             </div>
           )}
           {collaboratorProfiles.length > 0 && (
@@ -355,26 +318,15 @@ const WritingStudioPage: React.FC = () => {
 
       <IonContent>
         <div className="p-4 h-full">
-          {/* Shared by the header's cover button and artwork's upload target, so
-              it lives at page level rather than inside one branch. */}
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-            onChange={handleImageChange} />
           {type === 'artwork' ? (
             <div className="flex flex-col gap-4">
-              <button type="button" onClick={handleImagePick}
-                disabled={isUploadingImage}
-                className="border border-dashed border-wilde-border rounded-lg h-56 flex flex-col items-center justify-center gap-2 text-wilde-muted overflow-hidden">
-                {isUploadingImage ? (
-                  <IonSpinner name="crescent" />
-                ) : currentWork?.coverImageUrl ? (
-                  <img src={currentWork.coverImageUrl} alt="Artwork preview" className="w-full h-full object-cover" />
-                ) : (
-                  <>
-                    <IonIcon icon={imageOutline} aria-hidden="true" className="text-3xl" />
-                    <span className="text-sm">Tap to upload artwork</span>
-                  </>
-                )}
-              </button>
+              <UploadDropzone
+                label="artwork"
+                upload={coverUpload}
+                currentUrl={currentWork?.coverImageUrl}
+                hint={`JPG, PNG or WebP · up to ${formatBytes(COVER_MAX_BYTES)}`}
+                doneHint="Added — save or publish to keep it"
+                onRemove={hasCover ? handleRemoveCover : undefined} />
               <textarea
                 className="w-full text-sm leading-relaxed resize-none focus:outline-none min-h-24"
                 placeholder={config.placeholder}
@@ -391,7 +343,7 @@ const WritingStudioPage: React.FC = () => {
                         aria-current={c.id === activeChapter?.id}
                         className={'text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-colors ' +
                           (c.id === activeChapter?.id
-                            ? 'bg-wilde-black text-white'
+                            ? 'bg-wilde-black text-wilde-on-ink'
                             : 'border border-wilde-border')}>
                         {chapterLabel(c, i)}
                       </button>
@@ -431,8 +383,10 @@ const WritingStudioPage: React.FC = () => {
 
       <IonFooter>
         <IonToolbar>
+          {/* Saving mid-upload would persist the work without the cover URL the
+              user is watching arrive, so both writes wait for it. */}
           <div className="flex gap-2 p-4 text-center">
-            <button onClick={handleSaveDraft} disabled={isSaving}
+            <button onClick={handleSaveDraft} disabled={isSaving || coverUpload.isBusy}
               className="flex-1 border border-wilde-border rounded-md py-2 text-xs font-medium disabled:opacity-50">
               Save Draft
             </button>
@@ -440,8 +394,8 @@ const WritingStudioPage: React.FC = () => {
               className="flex-1 border border-wilde-border rounded-md py-2 text-xs font-medium">
               Collaborate
             </button>
-            <button onClick={() => setPublishOpen(true)} disabled={isSaving}
-              className="flex-1 bg-wilde-black text-white rounded-md py-2 text-xs font-medium disabled:opacity-50">
+            <button onClick={() => setPublishOpen(true)} disabled={isSaving || coverUpload.isBusy}
+              className="flex-1 bg-wilde-black text-wilde-on-ink rounded-md py-2 text-xs font-medium disabled:opacity-50">
               Publish
             </button>
           </div>

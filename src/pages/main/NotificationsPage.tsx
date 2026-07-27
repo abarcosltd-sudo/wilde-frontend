@@ -1,4 +1,5 @@
 import React from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent } from '@ionic/react';
 import { useNotifications } from '@/features/notifications/hooks/useNotifications';
 import { SkeletonScreen, NotificationSkeleton } from '@/components/ui/Skeleton';
@@ -12,9 +13,9 @@ const NotificationsPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center justify-between mb-4">
-            <h1 className="font-bold text-lg">Notifications</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Notifications</h1>
             {unreadCount > 0 && (
               <button onClick={() => markAllAsRead()} disabled={isMarkingAll}
                 className="text-xs text-wilde-muted underline disabled:opacity-40">
@@ -37,7 +38,7 @@ const NotificationsPage: React.FC = () => {
               {notifications.map(n => (
                 <button key={n.id} onClick={() => !n.read && markAsRead(n.id)}
                   className={'flex items-start gap-3 py-3 border-b border-wilde-border w-full text-left ' +
-                    'transition-colors ' + (n.read ? '' : 'bg-gray-50')}>
+                    'transition-colors ' + (n.read ? '' : 'bg-wilde-subtle')}>
                   <span className="text-xl" aria-hidden="true">{n.icon}</span>
                   <div className="flex-1">
                     <p className={'text-sm ' + (n.read ? '' : 'font-semibold')}>{n.message}</p>

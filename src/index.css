@@ -2,24 +2,250 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Every colour in the app resolves through these. Values are bare `R G B`
+ * triplets because Tailwind composes them as `rgb(var(--x) / <alpha-value>)`,
+ * which is what makes `bg-wilde-panel/60` work.
+ *
+ * `.dark` is put on <html> by `useAutoTheme` between 18:00 and 06:00 local.
+ */
 :root {
-  --wilde-black: #111111;
-  --wilde-cream: #F0EDE8;
-  --wilde-muted: #888888;
-  --ion-background-color: #ffffff;
-  --ion-text-color: #111111;
-  --ion-color-primary: #111111;
-  --ion-color-primary-rgb: 17,17,17;
-  --ion-color-primary-contrast: #ffffff;
+  --wilde-black:   17 17 17;
+  --wilde-cream:   240 237 232;
+  --wilde-muted:   107 107 107;
+  --wilde-border:  229 229 229;
+  --wilde-accent:  245 166 35;
+  --wilde-on-ink:  255 255 255;
+
+  /* Warm off-white rather than pure #fff: the brand is cream, and a flat white
+     page makes the card shadows read as dirt instead of depth. */
+  --wilde-surface: 252 251 249;
+  --wilde-panel:   255 255 255;
+  --wilde-subtle:  245 244 241;
+  --wilde-sunken:  235 233 228;
+
+  /* Decorative only — hairline rims and halos. At 2.3:1 on the light surface
+     it is deliberately below the contrast floor, which is fine for ornament but
+     never acceptable for something the user has to see. */
+  --gold:      201 162 77;
+  --gold-soft: 232 213 168;
+  /* The load-bearing gold: focus rings, drag highlights, the active tab. Darker
+     than the ornament so it clears 3:1 against surface, panel and subtle —
+     WCAG's non-text contrast minimum. Measured, not eyeballed. */
+  --gold-strong: 166 127 38;
+
+  --ion-background-color: rgb(252 251 249);
+  --ion-text-color: rgb(17 17 17);
+  --ion-color-primary: rgb(17 17 17);
+  --ion-color-primary-rgb: 17, 17, 17;
+  --ion-color-primary-contrast: rgb(255 255 255);
+  --ion-card-background: rgb(255 255 255);
+  --ion-item-background: rgb(255 255 255);
+  --ion-toolbar-background: rgb(252 251 249);
+  --ion-border-color: rgb(229 229 229);
+}
+
+.dark {
+  /* `wilde-black` is the app's "ink": the colour of text and of filled
+     buttons. It inverts wholesale so `bg-wilde-black text-wilde-on-ink` stays a
+     legible contrast block in both themes instead of going invisible. */
+  --wilde-black:   240 237 232;
+  --wilde-cream:   30 29 27;
+  --wilde-muted:   150 148 143;
+  --wilde-border:  56 54 51;
+  --wilde-accent:  240 178 74;
+  --wilde-on-ink:  18 17 16;
+
+  /* Warm-tinted neutrals, not blue-grey — the light theme is cream, and a cold
+     dark mode reads as a different product. */
+  --wilde-surface: 18 17 16;
+  --wilde-panel:   28 26 24;
+  --wilde-subtle:  38 36 33;
+  --wilde-sunken:  48 45 42;
+
+  --gold:      212 175 95;
+  --gold-soft: 138 112 58;
+  /* On a near-black page the bright gold already measures 9:1, so the strong
+     variant doesn't need to darken — it brightens instead. */
+  --gold-strong: 224 187 106;
+
+  --ion-background-color: rgb(18 17 16);
+  --ion-text-color: rgb(240 237 232);
+  --ion-color-primary: rgb(240 237 232);
+  --ion-color-primary-rgb: 240, 237, 232;
+  --ion-color-primary-contrast: rgb(18 17 16);
+  --ion-card-background: rgb(28 26 24);
+  --ion-item-background: rgb(28 26 24);
+  --ion-toolbar-background: rgb(18 17 16);
+  --ion-border-color: rgb(56 54 51);
 }
 
 * { box-sizing: border-box; }
 
-body { font-family: 'Inter', system-ui, sans-serif; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: rgb(var(--wilde-surface));
+  color: rgb(var(--wilde-black));
+}
+
+/**
+ * The theme flip happens at a fixed hour, so it lands while the user is looking
+ * at the screen. Easing the swap keeps it from reading as a glitch.
+ *
+ * Scoped to colour properties only — a blanket `transition: all` would drag
+ * every layout change in the app through 400ms — and dropped entirely for
+ * reduced-motion users, who still get the new colours, just instantly.
+ */
+.theme-crossfade,
+.theme-crossfade *:not(svg):not(path) {
+  transition: background-color 400ms ease, border-color 400ms ease,
+              color 400ms ease, box-shadow 400ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-crossfade,
+  .theme-crossfade *:not(svg):not(path) {
+    transition: none;
+  }
+}
+
+/**
+ * The gold edging is done with Tailwind's `ring-*` utilities at the call sites,
+ * not with a class here. Both a plain `box-shadow` rule and `shadow-card` write
+ * the same property, so one silently wipes out the other; `ring` composes into
+ * the same shadow chain Tailwind builds, and the two survive together.
+ */
+
+/**
+ * Ionic primitives don't take Tailwind classes, so their surfaces are set here.
+ *
+ * Light mode carries depth in the shadows; dark mode drops them — a shadow on a
+ * near-black page is invisible — and leans on a lighter panel plus a border
+ * instead. That's why each rule has a `.dark` counterpart rather than one
+ * shadow doing both jobs badly.
+ */
+ion-toolbar {
+  --background: rgb(var(--wilde-surface));
+  --color: rgb(var(--wilde-black));
+  --border-color: rgb(var(--wilde-border));
+}
+
+ion-card {
+  --background: rgb(var(--wilde-panel));
+  --color: rgb(var(--wilde-black));
+}
+
+ion-modal {
+  --background: rgb(var(--wilde-panel));
+  --box-shadow: 0 -2px 24px rgb(17 17 17 / 0.12);
+}
+
+.dark ion-modal {
+  --box-shadow: 0 -2px 32px rgb(0 0 0 / 0.55);
+}
+
+ion-tab-bar {
+  --background: rgb(var(--wilde-panel));
+  --color: rgb(var(--wilde-muted));
+  --color-selected: rgb(var(--wilde-black));
+  border-top: 1px solid rgb(var(--wilde-border));
+  box-shadow: 0 -1px 12px rgb(17 17 17 / 0.05);
+}
+
+.dark ion-tab-bar {
+  box-shadow: none;
+}
+
+/**
+ * Glass chrome: the bars sit *over* the content rather than beside it, so the
+ * page reads as one surface with the toolbar floating above it.
+ *
+ * This block has to come after the opaque `ion-toolbar` and `ion-tab-bar`
+ * rules above. `@supports` adds no specificity, so declaring it earlier lets
+ * the plain rule win on source order — which is exactly what happened first
+ * time: the blur applied to a fully opaque bar, so there was nothing behind it
+ * to see and the effect was invisible.
+ *
+ * Translucency is confined to the supports block on purpose. A browser without
+ * backdrop-filter would otherwise render a half-transparent bar with the feed
+ * scrolling legibly straight through the labels.
+ */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  ion-toolbar {
+    --background: rgb(var(--wilde-surface) / 0.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  ion-tab-bar {
+    --background: rgb(var(--wilde-panel) / 0.72);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+}
+
+/* The gold shows up where the eye already is: a short rule over the tab you're
+   on. Enough to warm the chrome, not enough to become the brand colour. */
+ion-tab-button {
+  position: relative;
+}
+
+ion-tab-button.tab-selected::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 22px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(var(--gold-strong));
+  transform: translateX(-50%);
+}
+
+/* Elevation for the shared `Button` only. The ad-hoc pill buttons scattered
+   through the pages stay flat on purpose — a shadow on a 24px chip is noise. */
+ion-button {
+  --transition: background 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+ion-button.button-solid {
+  --box-shadow: 0 1px 2px rgb(17 17 17 / 0.06), 0 2px 8px rgb(17 17 17 / 0.10);
+}
+
+.dark ion-button.button-solid {
+  --box-shadow: none;
+}
+
+/**
+ * Unstyled form controls default to a white background and black text from the
+ * user agent, which survives the theme flip and leaves white boxes on a dark
+ * page. The app's inputs only ever set a border, so they inherit here instead.
+ */
+input,
+textarea,
+select {
+  background-color: transparent;
+  color: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgb(var(--wilde-muted));
+}
+
+/* One gold focus treatment for every text field, so focus reads the same
+   everywhere. Buttons keep Tailwind's ring utilities. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: rgb(var(--gold-strong) / 0.8);
+  box-shadow: 0 0 0 3px rgb(var(--gold-strong) / 0.18);
+}
 
 .rich-text-editor:empty:before {
   content: attr(data-placeholder);
-  color: var(--wilde-muted);
+  color: rgb(var(--wilde-muted));
   pointer-events: none;
 }
 
@@ -31,4 +257,25 @@ body { font-family: 'Inter', system-ui, sans-serif; }
 .rich-text-content ol {
   list-style: decimal;
   padding-left: 1.25em;
+}
+
+/* SweetAlert ships its own light palette; these pull it onto the theme tokens
+   so a confirm dialog at 9pm isn't a white flash. */
+.swal2-popup {
+  background: rgb(var(--wilde-panel));
+  color: rgb(var(--wilde-black));
+  border: 1px solid rgb(var(--wilde-border));
+}
+
+.swal2-title,
+.swal2-html-container {
+  color: rgb(var(--wilde-black));
+}
+
+.swal2-input,
+.swal2-select,
+.swal2-textarea {
+  background: rgb(var(--wilde-subtle));
+  color: rgb(var(--wilde-black));
+  border: 1px solid rgb(var(--wilde-border));
 }

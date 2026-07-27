@@ -19,7 +19,7 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'md', className }) =>
       {src
         ? <IonImg src={src} alt={name ?? 'Profile picture'} />
         : (
-          <div className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-600 font-semibold text-sm">
+          <div className="flex items-center justify-center w-full h-full bg-wilde-sunken text-wilde-muted font-semibold text-sm">
             {initials}
           </div>
         )

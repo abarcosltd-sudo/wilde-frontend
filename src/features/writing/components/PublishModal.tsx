@@ -57,7 +57,7 @@ const PublishModal: React.FC<Props> = ({
         <div className="flex items-center justify-between mb-4">
           <button onClick={onClose}
             aria-label="Close"
-            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
+            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-wilde-subtle">
             <IonIcon icon={closeOutline} aria-hidden="true" />
           </button>
           <h2 className="font-bold">Publish</h2>
@@ -75,13 +75,13 @@ const PublishModal: React.FC<Props> = ({
               <button type="button" onClick={() => setIsPaid(false)}
                 aria-pressed={!isPaid}
                 className={'flex-1 text-sm py-2 rounded-lg border transition-colors ' +
-                  (!isPaid ? 'bg-wilde-black text-white border-wilde-black' : 'border-wilde-border')}>
+                  (!isPaid ? 'bg-wilde-black text-wilde-on-ink border-wilde-black' : 'border-wilde-border')}>
                 Free to read
               </button>
               <button type="button" onClick={() => setIsPaid(true)}
                 aria-pressed={isPaid}
                 className={'flex-1 text-sm py-2 rounded-lg border transition-colors ' +
-                  (isPaid ? 'bg-wilde-black text-white border-wilde-black' : 'border-wilde-border')}>
+                  (isPaid ? 'bg-wilde-black text-wilde-on-ink border-wilde-black' : 'border-wilde-border')}>
                 Sell it
               </button>
             </div>
@@ -114,7 +114,7 @@ const PublishModal: React.FC<Props> = ({
                   className="flex-1 min-w-0 border border-wilde-border rounded-lg px-3 py-2 text-sm" />
               </div>
               <p id="work-price-help"
-                className={'text-xs mt-1 ' + (isBelowMinimum ? 'text-red-600' : 'text-wilde-muted')}>
+                className={'text-xs mt-1 ' + (isBelowMinimum ? 'text-red-600 dark:text-red-400' : 'text-wilde-muted')}>
                 {isBelowMinimum
                   ? `Minimum is ${formatCurrency(minimum, currency)} — below that, card payments are declined.`
                   : `Readers see about half the text free, then a prompt to unlock the rest. Minimum ${formatCurrency(minimum, currency)}.`}
