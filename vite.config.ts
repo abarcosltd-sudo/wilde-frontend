@@ -28,27 +28,22 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    rollupOptions: {
-      output: {
-        /**
-         * Splits dependencies that rarely change away from app code, so a
-         * deploy that touches a component doesn't invalidate the ~1.1MB of
-         * framework the browser already has cached. It does not reduce what the
-         * first visit downloads — the route splitting does that.
-         *
-         * Ionic and Firebase are both still on the boot path and together are
-         * most of it. Firestore is pulled in eagerly because `useAuth` runs at
-         * startup and imports `firestore.helpers`; deferring it means reworking
-         * how auth reads the user document, which is a larger change than a
-         * bundler config.
-         */
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-          ionic: ['@ionic/react', '@ionic/react-router'],
-          query: ['@tanstack/react-query'],
-        },
-      },
-    },
+    /**
+     * Deliberately no `manualChunks`.
+     *
+     * Grouping vendors by hand (react/react-dom/react-router-dom in one chunk,
+     * @ionic/react + @ionic/react-router in another) produced two chunks that
+     * imported from each other: `@ionic/react-router` depends on
+     * react-router-dom, while React itself was pulled into the Ionic chunk.
+     * Circular ES module chunks have no valid evaluation order, so a `const`
+     * was read inside its temporal dead zone and the production bundle threw
+     * "Cannot access 'b' before initialization" before rendering anything.
+     * Dev was unaffected, because Vite serves unbundled modules there.
+     *
+     * Rollup's automatic chunking derives the graph from real imports and
+     * cannot produce that cycle. Hand-grouping only bought cache stability
+     * across deploys; the actual payload win comes from the lazy routes in
+     * `AppRouter`, which this does not affect.
+     */
   },
 });
