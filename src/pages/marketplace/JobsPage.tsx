@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent } from '@ionic/react';
 import { swapVerticalOutline, addOutline } from 'ionicons/icons';
 import { useJobs } from '@/features/jobs/hooks/useJobs';
@@ -20,9 +21,9 @@ const JobsPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center justify-between mb-4">
-            <h1 className="font-bold text-lg">Creative Jobs</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Creative Jobs</h1>
             <div className="flex items-center gap-1">
               <IconButton icon={addOutline} label="Post a job" onClick={() => setPostOpen(true)} />
               <IconButton icon={swapVerticalOutline} onClick={() => setSortDesc(v => !v)}
@@ -49,7 +50,7 @@ const JobsPage: React.FC = () => {
                   </span>
                   <button onClick={() => apply(job.id)}
                     disabled={isApplying || appliedJobIds.has(job.id)}
-                    className="text-xs bg-wilde-black text-white rounded-md px-3 py-1.5
+                    className="text-xs bg-wilde-black text-wilde-on-ink rounded-md px-3 py-1.5
                       transition-opacity disabled:opacity-50">
                     {appliedJobIds.has(job.id) ? 'Applied' : 'Apply'}
                   </button>

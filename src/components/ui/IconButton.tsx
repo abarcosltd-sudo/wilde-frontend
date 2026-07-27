@@ -31,8 +31,12 @@ const IconButton: React.FC<IconButtonProps> = ({
       aria-label={label}
       className={
         'relative min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full shrink-0 ' +
-        'transition-colors active:bg-gray-100 focus-visible:outline-none ' +
-        'focus-visible:ring-2 focus-visible:ring-wilde-black focus-visible:ring-offset-1 ' +
+        'transition-colors active:bg-wilde-subtle focus-visible:outline-none ' +
+        // Gold focus ring rather than ink: it stays visible against both the
+        // light and the dark surface, where a near-black ring disappears at
+        // night and a cream one disappears by day.
+        'focus-visible:ring-2 focus-visible:ring-gold-strong focus-visible:ring-offset-1 ' +
+        'focus-visible:ring-offset-wilde-surface ' +
         'disabled:opacity-30 disabled:cursor-not-allowed ' + className
       }
     >

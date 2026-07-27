@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, checkmarkCircle, starOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
@@ -38,15 +39,15 @@ const PremiumPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center gap-2 mb-6">
             <IconButton icon={chevronBackOutline} label="Go back" onClick={() => history.goBack()} />
-            <h1 className="font-bold text-lg">Premium</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Premium</h1>
           </div>
 
           {isPremium ? (
             <div className="flex flex-col items-center text-center gap-3 py-10">
-              <IonIcon icon={checkmarkCircle} aria-hidden="true" className="text-5xl text-green-600" />
+              <IonIcon icon={checkmarkCircle} aria-hidden="true" className="text-5xl text-green-600 dark:text-green-400" />
               <h2 className="font-bold">You're on Premium</h2>
               <p className="text-sm text-wilde-muted">Thanks for supporting WILDE.</p>
             </div>
@@ -65,7 +66,7 @@ const PremiumPage: React.FC = () => {
                 {BENEFITS.map(benefit => (
                   <li key={benefit} className="flex items-start gap-2 text-sm">
                     <IonIcon icon={checkmarkCircle} aria-hidden="true"
-                      className="text-green-600 mt-0.5 shrink-0" />
+                      className="text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
                     <span>{benefit}</span>
                   </li>
                 ))}
@@ -80,7 +81,7 @@ const PremiumPage: React.FC = () => {
                       aria-pressed={provider === p.value}
                       className={'flex-1 text-sm py-2 rounded-lg border transition-colors ' +
                         (provider === p.value
-                          ? 'bg-wilde-black text-white border-wilde-black'
+                          ? 'bg-wilde-black text-wilde-on-ink border-wilde-black'
                           : 'border-wilde-border')}>
                       {p.label}
                     </button>
@@ -89,7 +90,7 @@ const PremiumPage: React.FC = () => {
               </fieldset>
 
               {error && (
-                <p role="alert" className="text-sm text-red-600 mb-4">{apiErrorMessage(error)}</p>
+                <p role="alert" className="text-sm text-red-600 dark:text-red-400 mb-4">{apiErrorMessage(error)}</p>
               )}
 
               <Button expand="block" isLoading={isPending} disabled={!pricing}

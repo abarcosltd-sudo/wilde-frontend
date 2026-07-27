@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 
-export const usePagination = (pageSize = 20) => {
+// Page size is the caller's business — this only tracks which page is current
+// and whether another one exists.
+export const usePagination = () => {
   const [page, setPage]       = useState(1);
   const [hasMore, setHasMore] = useState(true);
 

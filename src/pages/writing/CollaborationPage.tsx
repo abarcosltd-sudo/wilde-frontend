@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonPage, IonContent, IonIcon } from '@ionic/react';
+import { IonPage, IonContent } from '@ionic/react';
 import { chevronBackOutline, sendOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useCollaboration } from '@/features/collaboration/hooks/useCollaboration';
@@ -60,7 +60,7 @@ const CollaborationPage: React.FC = () => {
             </div>
             {isAuthor && (
               <button onClick={() => setInviteOpen(true)}
-                className="text-xs bg-wilde-black text-white px-3 py-1 rounded">
+                className="text-xs bg-wilde-black text-wilde-on-ink px-3 py-1 rounded">
                 Invite
               </button>
             )}

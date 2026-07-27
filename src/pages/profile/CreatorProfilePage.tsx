@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, star, starOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
@@ -86,7 +87,7 @@ const CreatorProfilePage: React.FC = () => {
     return (
       <IonPage>
         <IonContent>
-          <div className="p-4">
+          <div className={PAGE_CLASS}>
             {backButton}
             <SkeletonScreen label="profile">
               <ProfileHeaderSkeleton />
@@ -102,7 +103,7 @@ const CreatorProfilePage: React.FC = () => {
     return (
       <IonPage>
         <IonContent>
-          <div className="p-4">
+          <div className={PAGE_CLASS}>
             {backButton}
             <p className="text-sm text-wilde-muted text-center py-12">
               This creator profile could not be found.
@@ -140,12 +141,12 @@ const CreatorProfilePage: React.FC = () => {
               <button onClick={() => follow()} disabled={isFollowPending}
                 aria-pressed={isFollowing}
                 className={'flex-1 rounded-lg py-2 text-sm font-medium transition-colors ' +
-                  (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
+                  (isFollowing ? 'border border-wilde-border' : 'bg-wilde-black text-wilde-on-ink')}>
                 {isFollowing ? 'Following' : 'Follow'}
               </button>
               <HireButton toUserId={uid} subject={creator.displayName}
                 className="flex-1 border border-wilde-border rounded-lg py-2 text-sm font-medium
-                  text-center transition-colors active:bg-gray-50" />
+                  text-center transition-colors active:bg-wilde-subtle" />
             </div>
           )}
           <div className="flex border-b border-wilde-border mb-4">
@@ -173,7 +174,7 @@ const CreatorProfilePage: React.FC = () => {
           )}
           {tab === 'About' && (
             creator.bio
-              ? <p className="text-sm leading-relaxed text-gray-600">{creator.bio}</p>
+              ? <p className="text-sm leading-relaxed text-wilde-muted">{creator.bio}</p>
               : <p className="text-sm text-wilde-muted text-center py-12">No bio yet.</p>
           )}
           {tab === 'Reviews' && (
@@ -185,7 +186,7 @@ const CreatorProfilePage: React.FC = () => {
                     <p className="text-sm font-semibold"><ReviewerName reviewerId={r.reviewerId} /></p>
                     <StarRow rating={r.rating} />
                   </div>
-                  <p className="text-sm text-gray-600">{r.comment}</p>
+                  <p className="text-sm text-wilde-muted">{r.comment}</p>
                 </div>
               ))}
               {reviews.length === 0 && (

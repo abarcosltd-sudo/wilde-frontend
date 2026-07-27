@@ -34,5 +34,11 @@ export const useHomeFeed = () => {
     // Only true on the very first load. A background refetch of cached data
     // keeps the existing list on screen rather than flashing skeletons.
     isLoading: feedQuery.isPending || trendingQuery.isPending,
+    // Reported per section rather than as one page-level flag: the trending
+    // rail failing is no reason to replace a feed that loaded fine.
+    feedError: feedQuery.isError ? feedQuery.error : null,
+    trendingError: trendingQuery.isError ? trendingQuery.error : null,
+    retryFeed: feedQuery.refetch,
+    retryTrending: trendingQuery.refetch,
   };
 };

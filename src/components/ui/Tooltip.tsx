@@ -22,7 +22,8 @@ const Tooltip: React.FC<TooltipProps> = ({ label, side = 'bottom', children }) =
       aria-hidden="true"
       className={
         'pointer-events-none absolute left-1/2 -translate-x-1/2 z-50 whitespace-nowrap ' +
-        'rounded-md bg-wilde-black px-2 py-1 text-[11px] font-medium text-white ' +
+        'rounded-md bg-wilde-black px-2 py-1 text-[11px] font-medium text-wilde-on-ink ' +
+        'shadow-lift ring-1 ring-gold/25 ' +
         'opacity-0 transition-opacity duration-150 ' +
         '[@media(hover:hover)]:group-hover:opacity-100 group-focus-within:opacity-100 ' +
         (side === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1')

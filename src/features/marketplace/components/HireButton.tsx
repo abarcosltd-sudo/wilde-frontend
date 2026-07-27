@@ -36,7 +36,7 @@ const HireButton: React.FC<Props> = ({ toUserId, subject, className }) => {
   return (
     <>
       <button onClick={() => setOpen(true)}
-        className={className ?? 'text-xs border border-wilde-black rounded-md px-3 py-1.5 transition-colors active:bg-gray-50'}>
+        className={className ?? 'text-xs border border-wilde-black rounded-md px-3 py-1.5 transition-colors active:bg-wilde-subtle'}>
         Hire
       </button>
 

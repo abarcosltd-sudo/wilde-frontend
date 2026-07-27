@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { imageOutline, briefcaseOutline, addOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
@@ -24,12 +25,12 @@ const AuthorName: React.FC<{ authorId: string }> = ({ authorId }) => {
 const WorkThumb: React.FC<{ src?: string; title: string }> = ({ src, title }) => {
   const [hasError, setError] = useState(false);
   return (
-    <div className="w-12 h-10 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center shrink-0">
+    <div className="w-12 h-10 bg-wilde-sunken rounded-md overflow-hidden flex items-center justify-center shrink-0">
       {src && !hasError ? (
         <img src={src} alt={title} loading="lazy" decoding="async"
           onError={() => setError(true)} className="w-full h-full object-cover" />
       ) : (
-        <IonIcon icon={imageOutline} aria-hidden="true" className="text-gray-500" />
+        <IonIcon icon={imageOutline} aria-hidden="true" className="text-wilde-muted" />
       )}
     </div>
   );
@@ -46,9 +47,9 @@ const MarketplacePage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-xl font-black">WILDE MARKET</h1>
+            <h1 className="font-display text-2xl font-black tracking-tight">WILDE MARKET</h1>
             {/* The cart icon that used to sit here was decorative — there is no
                 cart flow, and purchases complete straight from the Buy button. */}
             <IconButton icon={briefcaseOutline} label="Creative Jobs"
@@ -59,7 +60,7 @@ const MarketplacePage: React.FC = () => {
               <button key={t}
                 onClick={() => setTab(t)}
                 className={'text-xs px-3 py-1.5 rounded-full ' +
-                  (tab === t ? 'bg-wilde-black text-white' : 'border border-wilde-border')}>
+                  (tab === t ? 'bg-wilde-black text-wilde-on-ink' : 'border border-wilde-border')}>
                 {t}
               </button>
             ))}
@@ -90,7 +91,7 @@ const MarketplacePage: React.FC = () => {
                     </div>
                   </button>
                   <button disabled={isBuying} onClick={() => buy(w)}
-                    className="text-xs bg-wilde-black text-white px-3 py-1.5 rounded-md disabled:opacity-50">
+                    className="text-xs bg-wilde-black text-wilde-on-ink px-3 py-1.5 rounded-md disabled:opacity-50">
                     Buy
                   </button>
                 </div>
@@ -103,7 +104,7 @@ const MarketplacePage: React.FC = () => {
                 <h3 className="text-sm font-bold">Services</h3>
                 <button onClick={() => setOfferOpen(true)}
                   className="flex items-center gap-1 text-xs font-medium border border-wilde-border
-                    rounded-full px-3 py-1.5 active:bg-gray-50">
+                    rounded-full px-3 py-1.5 active:bg-wilde-subtle">
                   <IonIcon icon={addOutline} aria-hidden="true" />
                   Offer a service
                 </button>
@@ -115,7 +116,7 @@ const MarketplacePage: React.FC = () => {
               )}
               {listings.map(l => (
                 <div key={l.id} className="flex items-center gap-3 py-3 border-b border-wilde-border">
-                  <div className="w-8 h-8 rounded-full bg-gray-200" />
+                  <div className="w-8 h-8 rounded-full bg-wilde-sunken" />
                   <div className="flex-1">
                     <p className="text-sm font-bold">{l.title}</p>
                     <p className="text-xs text-wilde-muted">{formatCurrency(l.pricePerProject, l.currency)} / project</p>

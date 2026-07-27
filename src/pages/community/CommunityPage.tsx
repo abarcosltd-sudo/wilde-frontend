@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent, IonIcon, IonModal } from '@ionic/react';
 import {
-  heartOutline, heart, chatbubbleOutline, peopleOutline,
+  heartOutline, chatbubbleOutline, peopleOutline,
   addOutline, closeOutline, sendOutline,
 } from 'ionicons/icons';
 import { usePosts } from '@/features/community/hooks/usePosts';
@@ -156,9 +157,9 @@ const CommunityPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center justify-between mb-3">
-            <h1 className="font-bold text-lg">Community</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Community</h1>
             {tab === 'Groups' && (
               <IconButton icon={addOutline} label="New group"
                 onClick={() => setGroupModalOpen(true)} />
@@ -169,7 +170,7 @@ const CommunityPage: React.FC = () => {
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className={'text-xs px-3 py-1.5 rounded-full transition-colors ' +
-                  (tab === t ? 'bg-wilde-black text-white' : 'border border-wilde-border')}>
+                  (tab === t ? 'bg-wilde-black text-wilde-on-ink' : 'border border-wilde-border')}>
                 {t}
               </button>
             ))}
@@ -246,8 +247,8 @@ const CommunityPage: React.FC = () => {
                   const isJoined = joinedGroupIds.has(g.id);
                   return (
                     <div key={g.id} className="border border-wilde-border rounded-xl p-3 flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                        <IonIcon icon={peopleOutline} aria-hidden="true" className="text-gray-500" />
+                      <div className="w-10 h-10 rounded-lg bg-wilde-sunken flex items-center justify-center shrink-0">
+                        <IonIcon icon={peopleOutline} aria-hidden="true" className="text-wilde-muted" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold truncate">{g.name}</p>
@@ -261,7 +262,7 @@ const CommunityPage: React.FC = () => {
                       <button onClick={() => toggleMembership(g.id)}
                         aria-pressed={isJoined}
                         className={'text-xs rounded-md px-3 py-1.5 shrink-0 transition-colors ' +
-                          (isJoined ? 'border border-wilde-border' : 'bg-wilde-black text-white')}>
+                          (isJoined ? 'border border-wilde-border' : 'bg-wilde-black text-wilde-on-ink')}>
                         {isJoined ? 'Joined' : 'Join'}
                       </button>
                     </div>

@@ -108,7 +108,7 @@ const ReadWorkPage: React.FC = () => {
                     aria-pressed={isLiked}
                     aria-label={`${isLiked ? 'Unlike' : 'Like'} this work`}
                     className={'flex items-center gap-1 transition-colors ' +
-                      (isLiked ? 'text-red-500' : 'active:text-wilde-black')}>
+                      (isLiked ? 'text-red-500 dark:text-red-400' : 'active:text-wilde-black')}>
                     <IonIcon icon={isLiked ? heart : heartOutline} aria-hidden="true" className="text-base" />
                     {formatCount(work.likeCount ?? 0)}
                   </button>
@@ -126,7 +126,7 @@ const ReadWorkPage: React.FC = () => {
                 dangerouslySetInnerHTML={{ __html: visibleHtml }} />
 
               {isPaywalled && (
-                <div className="relative -mt-20 pt-20 bg-gradient-to-t from-white via-white to-transparent">
+                <div className="relative -mt-20 pt-20 bg-gradient-to-t from-wilde-surface via-wilde-surface to-transparent">
                   <div className="border border-wilde-border rounded-xl p-4 text-center">
                     <IonIcon icon={lockClosedOutline} aria-hidden="true" className="text-2xl mb-2" />
                     <p className="font-bold text-sm mb-1">Continue reading "{work.title}"</p>

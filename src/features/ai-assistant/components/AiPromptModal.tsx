@@ -38,7 +38,7 @@ const AiPromptModal: React.FC<Props> = ({ isOpen, onClose, workType, onInsert })
         <div className="flex items-center justify-between mb-4">
           <button onClick={onClose}
             aria-label="Close"
-            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-gray-100">
+            className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-wilde-subtle">
             <IonIcon icon={closeOutline} aria-hidden="true" />
           </button>
           <h2 className="font-bold">{workTypeLabel(workType)} AI Prompt</h2>
@@ -51,7 +51,7 @@ const AiPromptModal: React.FC<Props> = ({ isOpen, onClose, workType, onInsert })
               <button key={t}
                 onClick={() => setTopic(t)}
                 className={'text-xs px-3 py-1.5 rounded-full transition-colors ' +
-                  (topic === t ? 'bg-wilde-black text-white' : 'border border-wilde-border')}>
+                  (topic === t ? 'bg-wilde-black text-wilde-on-ink' : 'border border-wilde-border')}>
                 {t}
               </button>
             ))}
@@ -69,12 +69,12 @@ const AiPromptModal: React.FC<Props> = ({ isOpen, onClose, workType, onInsert })
           </div>
           {error && (
             <div role="alert"
-              className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+              className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg p-3 text-sm text-red-700 dark:text-red-300">
               {error}
             </div>
           )}
           {output && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+            <div className="bg-wilde-subtle rounded-lg p-3 text-sm leading-relaxed text-wilde-muted whitespace-pre-wrap">
               {output}
             </div>
           )}
@@ -90,7 +90,7 @@ const AiPromptModal: React.FC<Props> = ({ isOpen, onClose, workType, onInsert })
             <div>
               <h3 className="text-xs font-bold text-wilde-muted mb-2">History</h3>
               {history.map((h, i) => (
-                <div key={i} className="text-xs text-gray-500 border-b border-wilde-border py-2">
+                <div key={i} className="text-xs text-wilde-muted border-b border-wilde-border py-2">
                   {h.prompt}
                 </div>
               ))}

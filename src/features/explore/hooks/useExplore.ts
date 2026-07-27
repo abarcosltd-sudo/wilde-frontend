@@ -18,7 +18,7 @@ export const useExplore = (query: string, tab: string) => {
   // The search term filters client-side over an already-fetched page, so it is
   // deliberately *not* part of the query key: typing narrows the cached list
   // instantly instead of firing a Firestore read per keystroke.
-  const { data, isPending, isFetching } = useQuery({
+  const { data, isPending, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['explore', tab],
     queryFn: async () => {
       if (isCreators) {
@@ -56,5 +56,9 @@ export const useExplore = (query: string, tab: string) => {
     return rows.filter(w => w.title?.toLowerCase().includes(term));
   }, [isCreators, data, term]);
 
-  return { works, creators, isLoading: isPending, isFetching };
+  return {
+    works, creators, isLoading: isPending, isFetching,
+    error: isError ? error : null,
+    retry: refetch,
+  };
 };

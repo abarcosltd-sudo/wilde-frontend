@@ -1,4 +1,5 @@
 import React from 'react';
+import { PAGE_CLASS } from '@/components/layout/Page';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { chevronBackOutline, globeOutline, lockClosedOutline, alertCircleOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
@@ -46,10 +47,10 @@ const PrivacyPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <div className="p-4">
+        <div className={PAGE_CLASS}>
           <div className="flex items-center gap-2 mb-4 -ml-2">
             <IconButton icon={chevronBackOutline} label="Go back" onClick={() => history.goBack()} />
-            <h1 className="font-bold text-lg">Privacy</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Privacy</h1>
           </div>
 
           <p className="text-sm leading-relaxed text-wilde-muted mb-6">
@@ -59,9 +60,9 @@ const PrivacyPage: React.FC = () => {
           <Section icon={globeOutline} title="Visible to everyone" items={PUBLIC_ITEMS} />
           <Section icon={lockClosedOutline} title="Visible only to you" items={PRIVATE_ITEMS} />
 
-          <section className="border border-amber-300 bg-amber-50 rounded-xl p-3">
+          <section className="border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 rounded-xl p-3">
             <h2 className="flex items-center gap-2 text-sm font-bold mb-1.5">
-              <IonIcon icon={alertCircleOutline} aria-hidden="true" className="text-amber-600" />
+              <IonIcon icon={alertCircleOutline} aria-hidden="true" className="text-amber-600 dark:text-amber-400" />
               Your email address
             </h2>
             <p className="text-sm leading-relaxed text-wilde-muted">
