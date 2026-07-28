@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Redirect } from 'react-router-dom';
@@ -8,6 +8,8 @@ import GuestGuard from './GuestGuard';
 import MainLayout from '@/components/layout/MainLayout';
 import CommandPalette from '@/components/ui/CommandPalette';
 import RouteFallback from '@/components/layout/RouteFallback';
+import { lazyPage } from './lazyPage';
+import RouteErrorBoundary from './RouteErrorBoundary';
 
 /**
  * Routes are lazy so the first load ships the shell and the landing screen
@@ -22,32 +24,33 @@ import RouteFallback from '@/components/layout/RouteFallback';
 import SplashPage from '@/pages/auth/SplashPage';
 import SignInPage from '@/pages/auth/SignInPage';
 
-const OnboardingPage      = lazy(() => import('@/pages/onboarding/OnboardingPage'));
-const SignUpPage          = lazy(() => import('@/pages/auth/SignUpPage'));
-const ForgotPasswordPage  = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
-const HomePage            = lazy(() => import('@/pages/main/HomePage'));
-const ExplorePage         = lazy(() => import('@/pages/main/ExplorePage'));
-const WritingStudioPage   = lazy(() => import('@/pages/writing/WritingStudioPage'));
-const ReadWorkPage        = lazy(() => import('@/pages/writing/ReadWorkPage'));
-const CollaborationPage   = lazy(() => import('@/pages/writing/CollaborationPage'));
-const MarketplacePage     = lazy(() => import('@/pages/marketplace/MarketplacePage'));
-const JobsPage            = lazy(() => import('@/pages/marketplace/JobsPage'));
-const PaymentCallbackPage = lazy(() => import('@/pages/marketplace/PaymentCallbackPage'));
-const NotificationsPage   = lazy(() => import('@/pages/main/NotificationsPage'));
-const CommunityPage       = lazy(() => import('@/pages/community/CommunityPage'));
-const ProfileDashPage     = lazy(() => import('@/pages/profile/ProfileDashPage'));
-const CreatorProfilePage  = lazy(() => import('@/pages/profile/CreatorProfilePage'));
-const SettingsPage        = lazy(() => import('@/pages/settings/SettingsPage'));
-const HelpPage            = lazy(() => import('@/pages/settings/HelpPage'));
-const PremiumPage         = lazy(() => import('@/pages/settings/PremiumPage'));
-const PrivacyPage         = lazy(() => import('@/pages/settings/PrivacyPage'));
+const OnboardingPage      = lazyPage(() => import('@/pages/onboarding/OnboardingPage'));
+const SignUpPage          = lazyPage(() => import('@/pages/auth/SignUpPage'));
+const ForgotPasswordPage  = lazyPage(() => import('@/pages/auth/ForgotPasswordPage'));
+const HomePage            = lazyPage(() => import('@/pages/main/HomePage'));
+const ExplorePage         = lazyPage(() => import('@/pages/main/ExplorePage'));
+const WritingStudioPage   = lazyPage(() => import('@/pages/writing/WritingStudioPage'));
+const ReadWorkPage        = lazyPage(() => import('@/pages/writing/ReadWorkPage'));
+const CollaborationPage   = lazyPage(() => import('@/pages/writing/CollaborationPage'));
+const MarketplacePage     = lazyPage(() => import('@/pages/marketplace/MarketplacePage'));
+const JobsPage            = lazyPage(() => import('@/pages/marketplace/JobsPage'));
+const PaymentCallbackPage = lazyPage(() => import('@/pages/marketplace/PaymentCallbackPage'));
+const NotificationsPage   = lazyPage(() => import('@/pages/main/NotificationsPage'));
+const CommunityPage       = lazyPage(() => import('@/pages/community/CommunityPage'));
+const ProfileDashPage     = lazyPage(() => import('@/pages/profile/ProfileDashPage'));
+const CreatorProfilePage  = lazyPage(() => import('@/pages/profile/CreatorProfilePage'));
+const SettingsPage        = lazyPage(() => import('@/pages/settings/SettingsPage'));
+const HelpPage            = lazyPage(() => import('@/pages/settings/HelpPage'));
+const PremiumPage         = lazyPage(() => import('@/pages/settings/PremiumPage'));
+const PrivacyPage         = lazyPage(() => import('@/pages/settings/PrivacyPage'));
 
 const AppRouter: React.FC = () => (
   <IonReactRouter>
     {/* Inside the router because it navigates; outside the outlet so the route
         change it triggers doesn't unmount it mid-navigation. */}
     <CommandPalette />
-    <Suspense fallback={<RouteFallback />}>
+    <RouteErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
       <IonRouterOutlet>
         <Route exact path={ROUTES.SPLASH}         component={SplashPage} />
         <Route path={ROUTES.ONBOARDING}           component={OnboardingPage} />
@@ -79,7 +82,8 @@ const AppRouter: React.FC = () => (
         </AuthGuard>
         <Redirect to={ROUTES.SPLASH} />
       </IonRouterOutlet>
-    </Suspense>
+      </Suspense>
+    </RouteErrorBoundary>
   </IonReactRouter>
 );
 
