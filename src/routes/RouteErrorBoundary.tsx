@@ -3,13 +3,12 @@ import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { cloudOfflineOutline, refreshOutline } from 'ionicons/icons';
 
 /**
- * Catches a route that fails to load or render.
+ * Catches a route that throws while rendering.
  *
- * Without a boundary here, a rejected `React.lazy` import unmounts the whole
- * tree and leaves a blank white page with nothing to act on. `lazyPage` already
- * reloads once to recover from a stale document; this is what the user sees if
- * that reload didn't help — a genuinely missing chunk, or an error thrown
- * inside the page module itself.
+ * Without a boundary, React unmounts the entire tree on an uncaught render
+ * error and leaves a blank page with nothing to act on — indistinguishable, to
+ * the user, from the app simply not working. This turns that into a message
+ * and a way out.
  *
  * A class component because error boundaries have no hooks equivalent.
  */
