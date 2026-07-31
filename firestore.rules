@@ -6,6 +6,25 @@ service cloud.firestore {
     function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
 
     /**
+     * Admin role, for the staff panel at /admin.
+     *
+     * The role comes from a signed custom claim, set server-side with the Admin
+     * SDK (`setCustomUserClaims(uid, { role: 'admin' })`). The `role` field on
+     * the Users document is deliberately *not* consulted here: a user may write
+     * their own Users document, so trusting it would let anyone promote
+     * themselves to superadmin. The client falls back to that field to decide
+     * what to render, which is why these rules — not the panel — are the
+     * boundary that matters.
+     *
+     * `.get('role', '')` rather than `.role` because reading a claim that isn't
+     * present raises an evaluation error and denies the request outright.
+     */
+    function role()        { return isAuth() ? request.auth.token.get('role', '') : ''; }
+    function isStaff()     { return role() in ['superadmin', 'admin', 'moderator', 'analyst']; }
+    function canModerate() { return role() in ['superadmin', 'admin', 'moderator']; }
+    function isSuperadmin(){ return role() == 'superadmin'; }
+
+    /**
      * Allows an update that does nothing but move one numeric counter by
      * exactly one. Used for the social counters that a *non-owner* has to be
      * able to change: following someone bumps their followersCount, liking a
@@ -51,6 +70,16 @@ service cloud.firestore {
       allow create, delete: if isOwner(uid);
       // followersCount is stepped by whoever follows or unfollows them.
       allow update: if isOwner(uid) || isCounterStep('followersCount');
+      /**
+       * Staff may suspend or annotate an account from /admin/users. `role` is
+       * excluded because it lives in the custom claim — a client write to that
+       * field grants nothing, and allowing it would only make the document
+       * disagree with the token. `email` and `uid` are excluded because they
+       * identify the account.
+       */
+      allow update: if canModerate()
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['role', 'email', 'uid']);
     }
 
     match /Works/{workId} {
@@ -67,6 +96,8 @@ service cloud.firestore {
       allow update: if (isAuth() && request.auth.uid == resource.data.authorId)
                     || isCounterStep('likeCount')
                     || isCounterStep('viewCount');
+      // Moderation: unpublish or remove a work that breaks the rules.
+      allow update, delete: if canModerate();
     }
 
     match /Likes/{likeId} {
@@ -97,12 +128,14 @@ service cloud.firestore {
       // any chapter of anyone's work.
       allow create: if isAuth() && canEditWorkContent(request.resource.data.workId);
       allow update, delete: if isAuth() && canEditWorkContent(resource.data.workId);
+      allow update, delete: if canModerate();
     }
 
     match /Follows/{followId} {
       allow read: if true;
       allow create: if isAuth() && request.auth.uid == request.resource.data.followerId;
       allow delete: if isAuth() && request.auth.uid == resource.data.followerId;
+      allow delete: if canModerate();
     }
 
     match /Posts/{postId} {
@@ -113,12 +146,14 @@ service cloud.firestore {
       allow update: if (isAuth() && request.auth.uid == resource.data.authorId)
                     || isCounterStep('likeCount')
                     || isCounterStep('commentCount');
+      allow update, delete: if canModerate();
     }
 
     match /Comments/{commentId} {
       allow read: if true;
       allow create: if isAuth() && request.auth.uid == request.resource.data.authorId;
       allow delete: if isAuth() && request.auth.uid == resource.data.authorId;
+      allow update, delete: if canModerate();
     }
 
     match /Groups/{groupId} {
@@ -128,6 +163,7 @@ service cloud.firestore {
       allow update: if (isAuth() && request.auth.uid == resource.data.createdBy)
                     || isCounterStep('memberCount');
       allow delete: if isAuth() && request.auth.uid == resource.data.createdBy;
+      allow update, delete: if canModerate();
     }
 
     match /GroupMembers/{memberId} {
@@ -135,12 +171,15 @@ service cloud.firestore {
       // Previously `if isAuth()`, which let anyone remove anyone else from a group.
       allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      allow update, delete: if canModerate();
     }
 
     match /GhostwriterListings/{listingId} {
       allow read: if true;
       allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      // Approve, reject or pause a listing from /admin/market.
+      allow update, delete: if canModerate();
     }
 
     match /Orders/{orderId} {
@@ -158,6 +197,9 @@ service cloud.firestore {
        * client to write one — as this rule previously did — let any user forge a
        * completed order and read any paid work for free.
        */
+      // Dispute resolution needs to see every order, not just one side's.
+      allow read: if isStaff();
+      allow update: if canModerate();
     }
 
     match /Prompts/{promptId} {
@@ -172,15 +214,19 @@ service cloud.firestore {
        * prove the `userId` match this rule requires.
        */
       allow read, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      allow read: if isStaff();
+      allow update, delete: if canModerate();
     }
 
     match /Streaks/{uid} {
       allow read, write: if isOwner(uid);
+      allow read: if isStaff();
     }
 
     match /Reminders/{reminderId} {
       allow read, update, delete: if isAuth() && request.auth.uid == resource.data.userId;
       allow create: if isAuth() && request.auth.uid == request.resource.data.userId;
+      allow read: if isStaff();
     }
 
     match /Notifications/{notifId} {
@@ -196,12 +242,14 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(['userId', 'icon', 'message', 'read'])
         && request.resource.data.read == false;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.userId;
+      allow read: if isStaff();
     }
 
     match /Jobs/{jobId} {
       allow read: if true;
       allow create: if isAuth() && request.auth.uid == request.resource.data.posterId;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.posterId;
+      allow update, delete: if canModerate();
     }
 
     match /JobApplications/{applicationId} {
@@ -215,6 +263,12 @@ service cloud.firestore {
     match /Payments/{paymentId} {
       // Read-only to the client; payment documents are written server-side.
       allow read: if isAuth() && request.auth.uid == resource.data.userId;
+      /**
+       * The ledger is readable by staff and writable by nobody. Refunds move
+       * real money and belong to the provider integration in the backend, which
+       * uses the Admin SDK and bypasses these rules entirely.
+       */
+      allow read: if isStaff();
     }
 
     match /Reviews/{reviewId} {
@@ -228,6 +282,27 @@ service cloud.firestore {
        */
       allow create: if isAuth() && request.auth.uid == request.resource.data.reviewerId;
       allow update, delete: if isAuth() && request.auth.uid == resource.data.reviewerId;
+      allow update, delete: if canModerate();
+    }
+
+    /**
+     * Every write made from /admin is recorded here first, by `adminData`.
+     *
+     * Append-only, including for superadmins: `update` and `delete` are denied
+     * outright rather than gated on a role. An audit trail that the people being
+     * audited can rewrite records nothing. Pinning `actorUid` to the caller
+     * means an entry cannot be attributed to someone else.
+     */
+    match /AdminAudit/{entryId} {
+      allow read: if isStaff();
+      allow create: if isStaff() && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Reserved for platform-wide settings edited from the admin panel.
+    match /AdminSettings/{docId} {
+      allow read: if isStaff();
+      allow write: if isSuperadmin();
     }
   }
 }

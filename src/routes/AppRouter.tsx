@@ -5,6 +5,7 @@ import { Route, Redirect } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import AuthGuard from './AuthGuard';
 import GuestGuard from './GuestGuard';
+import adminRoutes from './AdminRoutes';
 import MainLayout from '@/components/layout/MainLayout';
 import CommandPalette from '@/components/ui/CommandPalette';
 import RouteErrorBoundary from './RouteErrorBoundary';
@@ -84,6 +85,10 @@ const AppRouter: React.FC = () => (
             </IonRouterOutlet>
           </MainLayout>
         </AuthGuard>
+        {/* Staff-only. Outside `/app` because these screens bring their own
+            chrome and their own gate; AdminGuard handles the signed-out and
+            insufficient-role cases. Must stay above the catch-all below. */}
+        {adminRoutes}
         <Redirect to={ROUTES.SPLASH} />
       </IonRouterOutlet>
     </RouteErrorBoundary>
