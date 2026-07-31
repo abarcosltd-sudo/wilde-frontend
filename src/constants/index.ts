@@ -51,6 +51,17 @@ export const ROUTES = {
   PREMIUM:        '/app/settings/premium',
   PRIVACY:        '/app/settings/privacy',
   COLLABORATION:  '/app/collab/:workId',
+  /**
+   * Staff-only, and deliberately outside `/app`: the admin screens carry their
+   * own chrome (AdminShell) and their own gate (AdminGuard), so mounting them
+   * under MainLayout would wrap them in the reader's tab bar.
+   */
+  ADMIN:            '/admin',
+  ADMIN_ANALYTICS:  '/admin/analytics',
+  ADMIN_USERS:      '/admin/users',
+  ADMIN_MARKET:     '/admin/market',
+  ADMIN_MODERATION: '/admin/moderation',
+  ADMIN_COLLECTION: '/admin/c/:typeId',
 } as const;
 
 export const PAGINATION = { DEFAULT_LIMIT: 20 } as const;
