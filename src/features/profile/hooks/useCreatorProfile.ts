@@ -24,7 +24,11 @@ export const useCreatorProfile = (uid: string) => {
 
   const { data: works = [], isPending: isWorksLoading } = useQuery({
     queryKey: ['creator-works', uid],
-    queryFn: () => queryDocuments<Work>(Collections.WORKS, [where('authorId', '==', uid)]),
+    // Published only: a creator's drafts are theirs alone (they are listed on
+    // their own profile). Two equality filters need no composite index.
+    queryFn: () => queryDocuments<Work>(Collections.WORKS, [
+      where('authorId', '==', uid), where('status', '==', 'published'),
+    ]),
     enabled: !!uid,
   });
 

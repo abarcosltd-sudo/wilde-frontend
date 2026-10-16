@@ -63,3 +63,23 @@ export const formatBytes = (bytes: number): string => {
 
 export const truncate = (str: string, maxLen: number) =>
   str.length > maxLen ? str.slice(0, maxLen) + '…' : str;
+
+/**
+ * Compact age for feed bylines: "now", "5m", "9h", "3d", then a short date.
+ * `formatTimeAgo` reads "about 5 hours ago", which is too long to sit beside a
+ * name and a handle on a phone. `now` is injectable so the thresholds can be
+ * tested without freezing the clock.
+ */
+export const formatTimeShort = (value: DateLike, now: number = Date.now()): string => {
+  const d = toDate(value);
+  if (!d) return 'now';
+  const seconds = Math.max(0, Math.floor((now - d.getTime()) / 1000));
+  if (seconds < 60) return 'now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  return format(d, 'MMM d');
+};

@@ -60,7 +60,7 @@ const THEME_PILL_CLASS =
   'flex-1 text-center text-xs py-1.5 rounded-full border cursor-pointer transition-colors ' +
   'border-wilde-border peer-checked:bg-wilde-black peer-checked:text-wilde-on-ink ' +
   'peer-checked:border-wilde-black ' +
-  'peer-focus-visible:ring-2 peer-focus-visible:ring-gold-strong peer-focus-visible:ring-offset-1 ' +
+  'peer-focus-visible:ring-2 peer-focus-visible:ring-brand-strong peer-focus-visible:ring-offset-1 ' +
   'peer-focus-visible:ring-offset-wilde-surface';
 
 const SettingsPage: React.FC = () => {

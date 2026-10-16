@@ -31,17 +31,35 @@ module.exports = {
           /** A step stronger than `subtle`, for skeletons and empty media. */
           sunken:  token('wilde-sunken'),
         },
-        gold: {
-          /** Ornament: hairline rims and halos. Below the contrast floor by design. */
-          DEFAULT: token('gold'),
-          soft:    token('gold-soft'),
-          /** Anything the user has to be able to see: focus, drag, active state. */
-          strong:  token('gold-strong'),
+        /** Carnation. The only saturated colour in the chrome. */
+        brand: {
+          DEFAULT: token('brand'),
+          /** The tint behind brand-coloured text and quiet success states. */
+          soft:    token('brand-soft'),
+          /** Anything the user must be able to see: focus, drag, active state. */
+          strong:  token('brand-strong'),
+          /** Text and icons sitting on a `bg-brand` fill. */
+          on:      token('brand-on'),
+        },
+        /** One hue per creative format, as a foreground and a tint. */
+        fmt: {
+          book:        token('fmt-book'),
+          'book-bg':   token('fmt-book-bg'),
+          artwork:     token('fmt-artwork'),
+          'artwork-bg':token('fmt-artwork-bg'),
+          poem:        token('fmt-poem'),
+          'poem-bg':   token('fmt-poem-bg'),
+          stage:       token('fmt-stage'),
+          'stage-bg':  token('fmt-stage-bg'),
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Playfair Display', 'serif'],
+        // Geist is the interface; Newsreader is the work itself (titles,
+        // reading and writing surfaces), so content reads as content.
+        sans: ['Geist', 'system-ui', 'sans-serif'],
+        display: ['Newsreader', 'Georgia', 'serif'],
+        // Tailwind's `font-serif` is what the editors already use for prose.
+        serif: ['Newsreader', 'Georgia', 'serif'],
       },
       boxShadow: {
         // Light mode leans on shadow for depth. Dark mode can't — a shadow on a
@@ -51,8 +69,6 @@ module.exports = {
         lift:  '0 2px 4px rgb(17 17 17 / 0.06), 0 8px 24px rgb(17 17 17 / 0.10)',
         sheet: '0 -2px 24px rgb(17 17 17 / 0.12)',
         press: 'inset 0 1px 2px rgb(17 17 17 / 0.10)',
-        /** The gold edging: a hairline plus a barely-there warm halo. */
-        gold:  '0 0 0 1px rgb(var(--gold) / 0.35), 0 1px 12px rgb(var(--gold) / 0.14)',
       },
       keyframes: {
         shimmer: {

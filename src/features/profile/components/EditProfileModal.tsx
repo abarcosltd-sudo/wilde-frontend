@@ -100,7 +100,7 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <button type="button" onClick={handlePickPhoto} disabled={upload.isBusy || !user}
               aria-label={shownPhoto ? 'Change profile photo' : 'Add a profile photo'}
               className="relative block rounded-full focus-visible:outline-none
-                focus-visible:ring-2 focus-visible:ring-gold-strong focus-visible:ring-offset-2
+                focus-visible:ring-2 focus-visible:ring-brand-strong focus-visible:ring-offset-2
                 focus-visible:ring-offset-wilde-panel">
               <Avatar src={shownPhoto} name={displayName} size="lg"
                 className={'transition-opacity duration-200 ' + (upload.isBusy ? 'opacity-50' : '')} />
@@ -116,9 +116,9 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <span aria-hidden="true"
               className={'pointer-events-none absolute -inset-1 rounded-full transition-opacity duration-150 ' +
                 (drag.state === 'over'
-                  ? 'ring-2 ring-gold-strong opacity-100 motion-safe:animate-drop-pulse '
+                  ? 'ring-2 ring-brand-strong opacity-100 motion-safe:animate-drop-pulse '
                   : drag.state === 'reject' ? 'ring-2 ring-red-400 opacity-100 '
-                  : drag.state === 'armed'  ? 'ring-2 ring-gold-strong/40 opacity-100 '
+                  : drag.state === 'armed'  ? 'ring-2 ring-brand-strong/40 opacity-100 '
                   : 'ring-0 opacity-0 ')} />
 
             {/* Real bytes, drawn as an arc around the photo. */}
@@ -136,7 +136,7 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 46}
                   strokeDashoffset={2 * Math.PI * 46 * (1 - upload.progress)}
-                  className="stroke-gold-strong transition-[stroke-dashoffset] duration-200 ease-out
+                  className="stroke-brand-strong transition-[stroke-dashoffset] duration-200 ease-out
                     motion-reduce:transition-none" />
               </svg>
             )}

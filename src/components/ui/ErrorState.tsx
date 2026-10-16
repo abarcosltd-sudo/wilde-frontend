@@ -52,7 +52,7 @@ const ErrorState: React.FC<Props> = ({ label, error, onRetry, inline }) => {
           className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold
             border border-wilde-border rounded-full px-4 py-2 transition-colors
             active:bg-wilde-subtle focus-visible:outline-none focus-visible:ring-2
-            focus-visible:ring-gold-strong focus-visible:ring-offset-1
+            focus-visible:ring-brand-strong focus-visible:ring-offset-1
             focus-visible:ring-offset-wilde-surface">
           <IonIcon icon={refreshOutline} aria-hidden="true" />
           Try again

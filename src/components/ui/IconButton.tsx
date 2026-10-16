@@ -35,7 +35,7 @@ const IconButton: React.FC<IconButtonProps> = ({
         // Gold focus ring rather than ink: it stays visible against both the
         // light and the dark surface, where a near-black ring disappears at
         // night and a cream one disappears by day.
-        'focus-visible:ring-2 focus-visible:ring-gold-strong focus-visible:ring-offset-1 ' +
+        'focus-visible:ring-2 focus-visible:ring-brand-strong focus-visible:ring-offset-1 ' +
         'focus-visible:ring-offset-wilde-surface ' +
         'disabled:opacity-30 disabled:cursor-not-allowed ' + className
       }
@@ -45,7 +45,7 @@ const IconButton: React.FC<IconButtonProps> = ({
         <span
           aria-hidden="true"
           className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 flex items-center justify-center
-            rounded-full bg-red-500 text-white text-[10px] font-bold leading-none"
+            rounded-full bg-fmt-artwork text-white text-[10px] font-bold leading-none"
         >
           {badge > 9 ? '9+' : badge}
         </span>

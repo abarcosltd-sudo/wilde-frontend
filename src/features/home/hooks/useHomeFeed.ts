@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { queryDocuments, Collections, orderBy, limit } from '@/firebase/firestore.helpers';
+import { queryDocuments, Collections, where, orderBy, limit } from '@/firebase/firestore.helpers';
 import { usePrimeUserCache } from '@/hooks/useUser';
 import { Work, User } from '@/types';
 
@@ -9,7 +9,12 @@ export const useHomeFeed = () => {
 
   const feedQuery = useQuery({
     queryKey: ['home-feed'],
-    queryFn: () => queryDocuments<Work>(Collections.WORKS, [orderBy('createdAt', 'desc'), limit(20)]),
+    // Published only. This used to list every work with no status filter, so
+    // anyone's unfinished drafts appeared in everyone's feed. Served by the
+    // existing `Works {status ASC, createdAt DESC}` composite index.
+    queryFn: () => queryDocuments<Work>(Collections.WORKS, [
+      where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(20),
+    ]),
   });
 
   const trendingQuery = useQuery({

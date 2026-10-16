@@ -40,9 +40,9 @@ interface Props {
  * a near-black surface, and ink is invisible on one of them by definition.
  */
 const RING_BY_STATE: Record<DragState, string> = {
-  over:   'ring-2 ring-gold-strong opacity-100 motion-safe:animate-drop-pulse',
+  over:   'ring-2 ring-brand-strong opacity-100 motion-safe:animate-drop-pulse',
   reject: 'ring-2 ring-red-400 opacity-100',
-  armed:  'ring-2 ring-gold-strong/40 opacity-100',
+  armed:  'ring-2 ring-brand-strong/40 opacity-100',
   idle:   'ring-0 opacity-0',
 };
 
@@ -111,8 +111,8 @@ const UploadDropzone: React.FC<Props> = ({
   const borderColorClass =
     isFailed                ? 'border-red-300 dark:border-red-800' :
     drag.state === 'reject' ? 'border-red-400' :
-    drag.state === 'over'   ? 'border-gold-strong' :
-    drag.state === 'armed'  ? 'border-gold-strong/50' :
+    drag.state === 'over'   ? 'border-brand-strong' :
+    drag.state === 'armed'  ? 'border-brand-strong/50' :
     'border-wilde-border';
 
   /**
