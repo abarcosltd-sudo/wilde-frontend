@@ -55,6 +55,7 @@ export const useWorkEditor = (workId: string) => {
       qc.invalidateQueries({ queryKey: ['explore'] }),
       qc.invalidateQueries({ queryKey: ['work', workId] }),
       qc.invalidateQueries({ queryKey: ['creator-works', currentWork.authorId] }),
+      qc.invalidateQueries({ queryKey: ['my-works'] }),
       qc.invalidateQueries({ queryKey: ['market-works'] }),
       qc.invalidateQueries({ queryKey: ['profile-analytics', currentWork.authorId] }),
     ]);

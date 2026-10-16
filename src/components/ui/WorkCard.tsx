@@ -1,27 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { IonCard, IonCardContent, IonIcon } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
-import {
-  heartOutline, heart, eyeOutline, createOutline, imagesOutline,
-  filmOutline, ticketOutline, pencilOutline, bookOutline,
-} from 'ionicons/icons';
-import { Work, WorkType } from '@/types';
+import { heartOutline, heart, eyeOutline } from 'ionicons/icons';
+import { Work } from '@/types';
 import { formatCount, truncate } from '@/utils';
 import { useUser } from '@/hooks/useUser';
 import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useAuthStore } from '@/store/slices/authStore';
 import { ROUTES } from '@/constants';
+import { FORMATS } from '@/utils/formats';
 import Avatar from './Avatar';
 import { Skeleton } from './Skeleton';
-
-const TYPE_ICONS: Record<WorkType, string> = {
-  short_story: createOutline,
-  artwork:     imagesOutline,
-  screenplay:  filmOutline,
-  playlet:     ticketOutline,
-  poetry:      pencilOutline,
-  long_work:   bookOutline,
-};
 
 interface WorkCardProps {
   work: Work;
@@ -45,6 +34,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick, size = 'default' }) 
   const isLiked = likedWorkIds.has(work.id);
 
   const isFeature = size === 'feature';
+  const fmt = FORMATS[work.type];
 
   // A new upload replaces the cover at the same storage path, so reset the
   // error flag when the URL changes rather than staying stuck on the fallback.
@@ -58,14 +48,12 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick, size = 'default' }) 
 
   return (
     <IonCard button onClick={handleClick}
-      // Depth in light, a rim in dark, and a gold hairline in both. The press
-      // scale is `motion-safe` and tiny — a card is a big target, and anything
-      // more than a percent or two reads as the layout breaking.
-      className="m-0 rounded-lg border border-wilde-border ring-1 ring-gold/20 dark:ring-gold/25
-        shadow-card dark:shadow-none transition-[box-shadow,transform]
-        active:shadow-press motion-safe:active:scale-[0.99]
-        motion-reduce:transition-none">
-      <div className={'bg-wilde-sunken overflow-hidden flex items-center justify-center ' +
+      // Flat: a hairline and rounded corners, no elevation. The press scale is
+      // `motion-safe` and tiny — a card is a big target, and anything more than
+      // a percent or two reads as the layout breaking.
+      className="m-0 rounded-2xl border border-wilde-border shadow-none transition-transform
+        motion-safe:active:scale-[0.99] motion-reduce:transition-none">
+      <div className={`${fmt.tint} overflow-hidden flex items-center justify-center ` +
         (isFeature ? 'h-44 sm:h-52' : 'h-32')}>
         {work.coverImageUrl && !hasImageError ? (
           <img
@@ -80,11 +68,11 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick, size = 'default' }) 
             onError={() => setImageError(true)}
             className="w-full h-full object-cover" />
         ) : (
-          <IonIcon icon={TYPE_ICONS[work.type]} aria-hidden="true" className="text-4xl text-wilde-muted" />
+          <IonIcon icon={fmt.icon} aria-hidden="true" className={`text-4xl ${fmt.text}`} />
         )}
       </div>
       <IonCardContent className="p-3">
-        <p className="text-xs text-wilde-muted uppercase tracking-wide">{work.type}</p>
+        <p className={`text-xs font-medium ${fmt.text}`}>{fmt.label}</p>
         {/* The display face on titles is what makes a feed of writing read as
             writing rather than as a list of records. */}
         <h3 className={'font-display font-bold mt-0.5 tracking-tight text-pretty ' +
@@ -121,7 +109,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick, size = 'default' }) 
             aria-pressed={isLiked}
             aria-label={`${isLiked ? 'Unlike' : 'Like'} ${work.title}`}
             className={'flex items-center gap-1 transition-colors ' +
-              (isLiked ? 'text-red-500 dark:text-red-400' : 'active:text-wilde-black')}>
+              (isLiked ? 'text-fmt-artwork' : 'active:text-wilde-black')}>
             <IonIcon icon={isLiked ? heart : heartOutline} aria-hidden="true" />
             {formatCount(work.likeCount ?? 0)}
           </button>

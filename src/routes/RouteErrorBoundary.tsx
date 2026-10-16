@@ -46,7 +46,7 @@ class RouteErrorBoundary extends React.Component<{ children: React.ReactNode }, 
               className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold
                 border border-wilde-border rounded-full px-5 py-2.5 transition-colors
                 active:bg-wilde-subtle focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-gold-strong focus-visible:ring-offset-1
+                focus-visible:ring-brand-strong focus-visible:ring-offset-1
                 focus-visible:ring-offset-wilde-surface"
             >
               <IonIcon icon={refreshOutline} aria-hidden="true" />

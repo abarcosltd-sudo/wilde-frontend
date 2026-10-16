@@ -30,6 +30,7 @@ export const useCreateWork = () => {
     },
     onSuccess: id => {
       qc.invalidateQueries({ queryKey: ['creator-works', user?.uid] });
+      qc.invalidateQueries({ queryKey: ['my-works'] });
       history.push(ROUTES.WRITING_STUDIO.replace(':workId', id));
     },
     onError: () => showToast("Couldn't start that draft. Please try again.", 'danger'),

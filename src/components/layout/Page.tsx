@@ -42,14 +42,14 @@ interface PageHeaderProps {
 }
 
 /**
- * The top of a screen. Playfair is used here and on work titles only: it was
- * loaded and configured from the start but never actually applied to anything,
- * so the app shipped a display face it never showed.
+ * The top of a screen: a large sans title, as in the spec. The serif display
+ * face is reserved for the work itself (titles of works, reading and writing
+ * surfaces), so the chrome stays quiet and the content stands out.
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, actions, subtitle }) => (
   <header className="flex items-start justify-between gap-3 mb-5">
     <div className="min-w-0">
-      <h1 className="font-display text-2xl font-bold tracking-tight text-balance">{title}</h1>
+      <h1 className="text-[34px] font-bold tracking-tight leading-none text-balance">{title}</h1>
       {subtitle && <p className="text-sm text-wilde-muted mt-0.5 text-pretty">{subtitle}</p>}
     </div>
     {actions && <div className="flex items-center gap-1 shrink-0">{actions}</div>}

@@ -95,6 +95,9 @@ const WritingStudioPage: React.FC = () => {
 
   const type = currentWork?.type ?? 'short_story';
   const config = TYPE_CONFIG[type];
+  // Prose is set at 18px on a 1.65 line, as in the spec; the monospaced formats
+  // (screenplay, play) stay compact because their layout depends on column width.
+  const bodySize = config.font.includes('mono') ? 'text-sm leading-relaxed' : 'text-[18px] leading-[1.65]';
   const hasCover = !!currentWork?.coverImageUrl;
 
   // Long works keep their text in Chapter documents; every other type keeps a
@@ -259,7 +262,7 @@ const WritingStudioPage: React.FC = () => {
               onChange={e => updateTitle(e.target.value)}
               aria-label="Work title"
               placeholder="Untitled"
-              className="flex-1 min-w-0 text-center font-bold text-base bg-transparent focus:outline-none" />
+              className="flex-1 min-w-0 text-center font-display font-semibold text-lg bg-transparent focus:outline-none" />
             <IconButton icon={sparklesOutline} label="AI Prompt" onClick={() => setAiPromptOpen(true)} />
             {/* The cover strip below is now always present and is itself the
                 picker, so a header button would be a second way to do the same
@@ -366,14 +369,14 @@ const WritingStudioPage: React.FC = () => {
                 // Remounting on chapter change resets the contentEditable buffer,
                 // which otherwise keeps the previous chapter's DOM.
                 key={isLongWork ? activeChapter?.id : 'single'}
-                className={`w-full h-full text-sm leading-relaxed focus:outline-none ${config.font}`}
+                className={`w-full h-full ${bodySize} focus:outline-none ${config.font}`}
                 placeholder={config.placeholder}
                 value={editorValue}
                 onChange={handleEditorChange} />
             </>
           ) : (
             <textarea
-              className={`w-full h-full text-sm leading-relaxed resize-none focus:outline-none ${config.font}`}
+              className={`w-full h-full ${bodySize} resize-none focus:outline-none ${config.font}`}
               placeholder={config.placeholder}
               value={editorValue}
               onChange={e => handleEditorChange(e.target.value)} />
@@ -387,15 +390,15 @@ const WritingStudioPage: React.FC = () => {
               user is watching arrive, so both writes wait for it. */}
           <div className="flex gap-2 p-4 text-center">
             <button onClick={handleSaveDraft} disabled={isSaving || coverUpload.isBusy}
-              className="flex-1 border border-wilde-border rounded-md py-2 text-xs font-medium disabled:opacity-50">
+              className="flex-1 border border-wilde-border rounded-full py-3 text-[15px] font-semibold disabled:opacity-50">
               Save Draft
             </button>
             <button onClick={() => setPickerOpen(true)}
-              className="flex-1 border border-wilde-border rounded-md py-2 text-xs font-medium">
+              className="flex-1 border border-wilde-border rounded-full py-3 text-[15px] font-semibold">
               Collaborate
             </button>
             <button onClick={() => setPublishOpen(true)} disabled={isSaving || coverUpload.isBusy}
-              className="flex-1 bg-wilde-black text-wilde-on-ink rounded-md py-2 text-xs font-medium disabled:opacity-50">
+              className="flex-1 bg-wilde-black text-wilde-on-ink rounded-full py-3 text-[15px] font-semibold disabled:opacity-50">
               Publish
             </button>
           </div>

@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { queryDocuments, Collections, where, orderBy, limit } from '@/firebase/firestore.helpers';
 import { Work, WorkType, GhostwriterListing } from '@/types';
 
-const BOOK_TYPES: WorkType[] = ['short_story', 'long_work', 'poetry', 'screenplay', 'playlet'];
+// Poetry has its own filter, so it is no longer lumped in with books.
+const BOOK_TYPES: WorkType[] = ['short_story', 'long_work', 'screenplay', 'playlet'];
 
 export const useMarketplace = (tab: string) => {
   const { data: works = [], isPending: isWorksLoading } = useQuery({
@@ -29,6 +30,7 @@ export const useMarketplace = (tab: string) => {
   // composite index per tab, and the 50 priced works above are already narrow.
   const worksInTab = (tab === 'Books' ? works.filter(w => BOOK_TYPES.includes(w.type))
     : tab === 'Art' ? works.filter(w => w.type === 'artwork')
+    : tab === 'Poetry' ? works.filter(w => w.type === 'poetry')
     : works
   ).slice(0, 20);
 

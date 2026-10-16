@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { formatTimeAgo, formatDate, toMillis, formatBytes } from '@/utils/format';
+import { formatTimeAgo, formatDate, toMillis, formatBytes, formatTimeShort } from '@/utils/format';
 
 /**
  * Regression cover for the `createdAt` bug: Firestore writes these fields as
@@ -93,5 +93,30 @@ describe('formatBytes', () => {
 
   it('stops showing decimals once they stop mattering', () => {
     expect(formatBytes(128.4 * MB)).toBe('129MB');
+  });
+});
+
+describe('formatTimeShort', () => {
+  const now = new Date('2026-10-20T12:00:00.000Z').getTime();
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+  const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+
+  it('reads "now" under a minute and for a pending serverTimestamp', () => {
+    expect(formatTimeShort(ago(30_000), now)).toBe('now');
+    expect(formatTimeShort(null, now)).toBe('now');
+  });
+
+  it('uses minutes, hours and days', () => {
+    expect(formatTimeShort(ago(5 * MIN), now)).toBe('5m');
+    expect(formatTimeShort(ago(9 * HOUR), now)).toBe('9h');
+    expect(formatTimeShort(ago(3 * DAY), now)).toBe('3d');
+  });
+
+  it('falls back to a date from a week out', () => {
+    expect(formatTimeShort(ago(10 * DAY), now)).toBe('Oct 10');
+  });
+
+  it('does not go negative when the clock is slightly behind the server', () => {
+    expect(formatTimeShort(new Date(now + 5_000).toISOString(), now)).toBe('now');
   });
 });

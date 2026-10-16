@@ -311,6 +311,171 @@ Backend-side counterparts are tracked in `../wilde-backend/TODO.md`.
 - [ ] **EPUB export** — deliberately dropped, needs a zip dependency to produce
   a container readers will open. A broken `.epub` is worse than not offering it.
 
+## Security checklist audit (2026-08-02)
+
+Checked against a standard 10-point pre-launch checklist (IDOR, RLS, frontend
+trust, expensive-endpoint abuse, auth, RLS policy review, storage buckets,
+public-endpoint abuse, SSRF, prompt injection). Most items are already covered
+— see `firestore.rules` and `storage.rules`, which document their own
+trade-offs inline. Added `.env.example` (was missing) since `.env` holds the
+only per-environment config and there was nothing showing new contributors
+what keys to set. Everything below is a real gap; none of it was safe to fix
+blind (needs either a data-model change with a migration, or console-side
+secrets this session doesn't have), so it's tracked here instead.
+
+- [ ] **Paywalled work/chapter bodies are readable by anyone, not just
+  buyers.** `firestore.rules:86` (`Works`) and `firestore.rules:126`
+  (`Chapters`) both `allow read: if true`, and `ReadWorkPage.tsx`/
+  `useWorkBody.ts` fetch the full document(s) unconditionally — the paywall
+  (`isPaywalled` / `truncateHtml`) only trims what's *displayed*, client-side.
+  Anyone can read a priced work's full text straight from the Firestore SDK
+  or REST API without an Order. This is the same class of bug `Orders` was
+  already hardened against (see the comment at `firestore.rules:190-199`);
+  it just wasn't caught for the content itself.
+  - Fix needs a data-model change, not just a rule tweak: split paywalled
+    body text out of the publicly-readable `Works`/`Chapters` documents into
+    a place a rule can gate on purchase — e.g. `Works/{workId}/body/{docId}`
+    — and check purchase via `get()`. Firestore rules can't run a query, so
+    that requires a `Purchases/{workId}_{buyerId}` doc with a predictable id
+    for `get()` to check (the current `Orders` collection uses auto-ids and
+    is written by the backend). That id scheme change has to happen in
+    `../wilde-backend` (`POST /api/payments/webhook/*`, wherever it marks an
+    Order `completed`), so this is a two-repo change — coordinate there
+    before touching rules here.
+- [ ] **No rate limiting or CAPTCHA on Firebase Auth sign-in/sign-up/reset.**
+  `SignInPage`/`SignUpPage`/`ForgotPasswordPage` call Firebase Auth directly
+  with no added friction. Firebase Auth has some built-in abuse mitigation,
+  but nothing here enables **Firebase App Check** for extra bot protection.
+  Needs a reCAPTCHA v3 (or App Check) site key from the Firebase console,
+  which isn't available in this session — wire up
+  `initializeAppCheck(app, { provider: new ReCaptchaV3Provider(SITE_KEY) })`
+  in `src/firebase/config.ts` once a key exists, gated behind a
+  `VITE_RECAPTCHA_SITE_KEY` env var so local dev without a key still works.
+- [x] **Rate limiting on the expensive backend endpoints — confirmed
+  implemented.** Audited `../wilde-backend` directly (2026-08-02): global IP
+  limiter plus per-uid limiters on both `/api/ai/generate` (30/hour) and
+  `/api/payments/initiate` (10/15min). See `../wilde-backend/TODO.md`
+  "Security checklist audit" for details.
+- [x] **SSRF — confirmed not applicable.** Audited `../wilde-backend`
+  directly (2026-08-02): no route accepts a client-supplied URL and fetches
+  it server-side. Flagged there as a watch item for if a URL-import feature
+  is ever added (no allowlist utility exists yet to reuse).
+- [ ] **Prompt injection into `/api/ai/generate`'s system prompt — real gap,
+  found in `../wilde-backend`.** `topic` (free text, ≤40 chars) is
+  interpolated raw into the system message rather than kept in the user
+  turn (`prompt.templates.ts:71` in that repo). Low blast radius (short
+  cap, no tool-use exposed) but unmitigated. Fix belongs entirely in
+  `../wilde-backend` — tracked in its `TODO.md`, nothing to do here.
+- [ ] **`isCounterStep` has no rate limit.** `firestore.rules:40-45` lets any
+  signed-in user repeatedly call the same one-step increment (follow/unfollow
+  a person over and over, like/unlike a post) to inflate `followersCount` /
+  `likeCount` / `memberCount` — already called out in the rule's own comment
+  as needing "server-side aggregation to fix properly." Low severity (vanity
+  metric, not money or access), left for whoever builds that aggregation.
+- [ ] **`Reviews` buyer eligibility isn't re-checked server-side.**
+  `firestore.rules:274-286`: eligibility (must hold a completed Order with
+  that creator) is enforced only in `useReviews.ts`. The rule's own comment
+  explains why — rules can't run a query, and fixing it needs the same
+  predictable-id `Purchases` doc as the paywall item above. Bundle the two if
+  this gets picked up.
+
+## Mobile redesign (2026-10-16)
+
+Reskin to the "Wilde Foundations v0.1" spec in `Wilde Mobile App.pdf`. Only things the
+app already does were rebuilt in the new look; everything else in the PDF is below.
+
+- [x] **Design tokens.** Ground/Surface/Ink/Hairline neutrals, Carnation `#1B6B4A` as the
+  one chrome colour, and a hue per format (book blue, artwork terracotta, poem plum).
+  The old `gold` tokens were renamed `brand` (they are green now). Dark mode is kept and
+  re-derived from the same palette; the spec only shows light.
+- [x] **Type.** Geist for the interface, Newsreader for the work itself (titles, reading
+  and writing at 18/1.65). Page titles are now large sans, not serif.
+- [x] **Navigation.** Home / Market / **Create** / Activity / Profile, Create as the only
+  filled colour. Explore lost its tab and is reached from the search icon on Home.
+  Community lost its Home icon and is reached from Settings.
+- [x] **Home** is a feed of format-shaped posts (artwork card with price and Buy, poem
+  with its opening lines, book/story with cover and Read) under format filter chips. The
+  Trending Creatives rail is kept above it; the spec has no equivalent.
+- [x] **Marketplace** is a two-column tile grid with title search and chips (All, Books,
+  Art, Poetry, Services). Tiles open the work; the Buy button is no longer on the tile.
+- [x] **Create** is a full sheet of format tiles plus "Continue a draft".
+- [x] **Profile** has the avatar ring, stats, role chips, and Works / Drafts / Studio
+  tabs. Drafts and Studio (analytics) are private to the owner. Profile previously showed
+  no works at all.
+- [x] **Read and Write** surfaces use the spec's reading type; pill buttons throughout.
+- [x] **Bug found on the way: drafts leaked into public lists.** Home, Explore and a
+  creator's Portfolio queried works with no `status` filter, so anyone's unfinished
+  drafts appeared in everyone's feed. Home now filters server-side (existing
+  `status + createdAt` index), the creator portfolio filters on `authorId + status`,
+  and Explore filters client-side. This does not fix the underlying exposure — see the
+  data-protection section: `Works` is still `read: if true`, so the SDK can still read
+  drafts directly.
+- [ ] **Explore server-side filter.** Add a `Works {type, status, createdAt}` composite
+  index and move the `published` filter from the client into the query.
+- [ ] **Self-host Geist and Newsreader.** Both load from Google Fonts, which sends every
+  visitor's IP address to Google. Inter/Playfair did the same, so this is not new, but
+  it is a known GDPR complaint and a cheap fix (`@fontsource`, or files in `public/`).
+- [ ] **Visual check on a real device and the Capacitor shell.** Verified in a desktop
+  browser at phone width, light and dark, with seeded data only (sign-in against the real
+  Firebase project was deliberately not used).
+
+### Shelved: security or privacy implications (do not build until resolved)
+
+- [ ] **Audience: "Only me", "Followers", "Subscribers".** Nothing enforces these today:
+  `Works` and `Chapters` are world-readable, so the option would be a label. Needs the
+  private/paid body split from the paywall item above before it means anything.
+- [ ] **Physical goods: prints, shipping, quantity, pickup, bag, "buyer protection".**
+  Shipping addresses are new personal data (lawful basis, retention, access control),
+  and selling to the EU brings VAT and consumer-law duties. Also needs EUR and an owner
+  for fulfilment, returns and disputes.
+- [ ] **Upload a PDF as a book; "Allow downloads: off".** Needs malware scanning, file
+  type and size validation, and Storage rules (currently image-only). "Off" cannot be
+  enforced for anything a browser renders, so the copy must not promise protection.
+- [ ] **Wilde Agent chat and "Exclude from AI training".** Sends manuscript text to a
+  model provider. Needs a DPA, a no-training contract term, a transfer basis and a
+  retention limit before the toggle can be a true statement. Related: the existing
+  prompt-injection gap on `topic` in `wilde-backend`.
+- [ ] **Journal format** (authors, affiliations, references, DOI/.bib import, peer
+  review). Co-author invites expose profile data; "peer reviewed" is a claim someone must
+  verify; DOI/.bib import means the server fetches user-supplied URLs (SSRF controls
+  first, see the backend TODO).
+- [ ] **Reader highlights, notes and in-text comments.** Reading activity is personal
+  data and public comments need moderation; decide visibility and retention first.
+
+### Not started: in the design, no privacy blocker
+
+- [ ] **Following feed** (For you / Following tabs). Needs a feed query over followed
+  authors (Firestore `in` caps at 30) or a fan-out.
+- [ ] **Reposts, bookmarks, share, comment counts on feed posts.** Only like and view
+  counts are shown because only those exist.
+- [ ] **Saved items (heart) and a shopping bag** in the marketplace.
+- [ ] **Free sample by chapter or page count.** The paywall still shows the first 50%.
+- [ ] **Pay what you want**, **scheduled publish**, and the three-step publish flow with
+  the "It's live" share screen.
+- [ ] **Reader controls:** font size, reflow vs original, progress bar, page counts.
+- [ ] **Poem editor:** line numbers, stanza forms (sonnet, haiku, villanelle).
+- [ ] **Artwork editor:** up to 8 photos, dimensions, medium, framing.
+
+## Data protection & privacy testing (2026-10-06)
+
+Full plan in `DATA-SECURITY-ROADMAP.md` (GDPR, NDPA/NDPR/GAID, PCI SAQ A, with HIPAA as
+a benchmark only). Findings from reading the code, each to be confirmed by a test:
+
+- [ ] **Drafts are world-readable.** `Works`/`Chapters` are `read: if true` and drafts
+  share those collections, while the Privacy page says drafts are "visible only to you".
+  Confirm with a rules test, then split private and paid bodies out of the public docs.
+- [ ] **No account deletion, data export, consent capture or age gate** anywhere in `src/`.
+- [ ] **Privacy page is inaccurate** (drafts claim; stale Hire/`mailto:` warning) and
+  there is no real privacy notice or terms of service.
+- [ ] **Google sign-in publishes part of the email**: `useAuth.ts:23` builds the public
+  `username` from `email.split('@')[0]`.
+- [ ] **Latent email leak**: backend `/auth/sync-user` writes `email` into the
+  world-readable `Users` doc (uncalled today); `Reminders` also stores email.
+- [ ] **PII in backend logs**: `morgan('combined')` logs IP and user agent; the mailer logs
+  recipient addresses. Set a retention rule or drop the fields.
+- [ ] **Stand up a staging Firebase project** (or emulators) so security tests never run
+  against real user data.
+
 ## Structural note
 
 The external backend at `wilde-backend.onrender.com` is **live but effectively

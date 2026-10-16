@@ -75,6 +75,44 @@ export const WorkGridSkeleton: React.FC<{ count?: number }> = ({ count = 4 }) =>
   </div>
 );
 
+/** Mirrors `FeedPost`: byline, format chip, a media card, the action row. */
+export const FeedPostSkeleton: React.FC = () => (
+  <div className="py-4 border-b border-wilde-border">
+    <div className="flex items-center gap-3">
+      <Skeleton circle className="h-11 w-11 shrink-0" />
+      <div className="flex-1">
+        <Skeleton className="h-3.5 w-40" />
+        <Skeleton className="h-6 w-24 mt-2" circle />
+      </div>
+    </div>
+    <Skeleton className="h-48 w-full mt-3 rounded-2xl" />
+    <div className="flex gap-5 mt-3">
+      <Skeleton className="h-4 w-10" />
+      <Skeleton className="h-4 w-10" />
+    </div>
+  </div>
+);
+
+export const FeedSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) => (
+  <div>{Array.from({ length: count }, (_, i) => <FeedPostSkeleton key={i} />)}</div>
+);
+
+/** Mirrors a marketplace tile: square media, price, title, byline. */
+export const MarketTileSkeleton: React.FC = () => (
+  <div>
+    <Skeleton className="aspect-square w-full rounded-2xl" />
+    <Skeleton className="h-4 w-14 mt-3" />
+    <Skeleton className="h-3.5 w-4/5 mt-2" />
+    <Skeleton className="h-3 w-3/5 mt-1.5" />
+  </div>
+);
+
+export const MarketGridSkeleton: React.FC<{ count?: number }> = ({ count = 4 }) => (
+  <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+    {Array.from({ length: count }, (_, i) => <MarketTileSkeleton key={i} />)}
+  </div>
+);
+
 /** Mirrors the horizontal "Trending Creatives" rail on Home. */
 export const CreatorRailSkeleton: React.FC<{ count?: number }> = ({ count = 5 }) => (
   <div className="flex gap-3 pb-2">

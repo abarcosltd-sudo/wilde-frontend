@@ -27,7 +27,10 @@ export const useExplore = (query: string, tab: string) => {
       const constraints: QueryConstraint[] = [orderBy('createdAt', 'desc'), limit(40)];
       const type = TAB_TYPE[tab];
       if (type) constraints.unshift(where('type', '==', type));
-      return queryDocuments<Work>(Collections.WORKS, constraints);
+      const rows = await queryDocuments<Work>(Collections.WORKS, constraints);
+      // Published only. Filtering server-side as well as by type would need a
+      // new composite index, so it narrows here until that index is deployed.
+      return rows.filter(w => w.status === 'published');
     },
     // Switching tabs keeps the previous tab's results on screen until the new
     // ones land, so the list never collapses to an empty flash mid-switch.

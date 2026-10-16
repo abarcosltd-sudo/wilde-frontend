@@ -86,7 +86,7 @@ const ReadWorkPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <div className="p-4">
+        <div className="mx-auto w-full max-w-2xl px-5 py-4">
           {isLoading ? (
             <SkeletonScreen label="story">
               <div className="flex items-center gap-2 mb-4">
@@ -108,7 +108,7 @@ const ReadWorkPage: React.FC = () => {
                     aria-pressed={isLiked}
                     aria-label={`${isLiked ? 'Unlike' : 'Like'} this work`}
                     className={'flex items-center gap-1 transition-colors ' +
-                      (isLiked ? 'text-red-500 dark:text-red-400' : 'active:text-wilde-black')}>
+                      (isLiked ? 'text-fmt-artwork' : 'active:text-wilde-black')}>
                     <IonIcon icon={isLiked ? heart : heartOutline} aria-hidden="true" className="text-base" />
                     {formatCount(work.likeCount ?? 0)}
                   </button>
@@ -120,17 +120,22 @@ const ReadWorkPage: React.FC = () => {
               </div>
               {work.coverImageUrl && (
                 <img src={work.coverImageUrl} alt={work.title}
-                  className="w-full rounded-lg mb-4 object-cover max-h-72" />
+                  className="w-full rounded-2xl mb-5 object-cover max-h-72" />
               )}
-              <div className="text-sm leading-relaxed whitespace-pre-wrap rich-text-content"
+              <h1 className="font-display text-[30px] font-semibold leading-tight tracking-tight text-pretty mb-4">
+                {work.title}
+              </h1>
+              {/* The work itself, set as the spec has it: the display serif at
+                  18px on a 1.65 line. */}
+              <div className="font-display text-[18px] leading-[1.65] whitespace-pre-wrap rich-text-content"
                 dangerouslySetInnerHTML={{ __html: visibleHtml }} />
 
               {isPaywalled && (
                 <div className="relative -mt-20 pt-20 bg-gradient-to-t from-wilde-surface via-wilde-surface to-transparent">
-                  <div className="border border-wilde-border rounded-xl p-4 text-center">
+                  <div className="border border-wilde-border bg-wilde-panel rounded-2xl p-5 text-center">
                     <IonIcon icon={lockClosedOutline} aria-hidden="true" className="text-2xl mb-2" />
-                    <p className="font-bold text-sm mb-1">Continue reading "{work.title}"</p>
-                    <p className="text-xs text-wilde-muted mb-3">
+                    <p className="font-display text-xl font-semibold mb-1">Continue reading "{work.title}"</p>
+                    <p className="text-[15px] text-wilde-muted mb-4">
                       Unlock the full story for {formatCurrency(work.price ?? 0, work.currency)}
                     </p>
                     <Button expand="block" isLoading={isBuying} onClick={handleBuy}>

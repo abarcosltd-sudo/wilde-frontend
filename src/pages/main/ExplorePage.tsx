@@ -36,7 +36,7 @@ const ExplorePage: React.FC = () => {
                 aria-selected={activeTab === tab}
                 onClick={() => setActiveTab(tab)}
                 className={'text-xs px-3 py-1.5 rounded-full border transition-colors shrink-0 ' +
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-strong ' +
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong ' +
                   (activeTab === tab
                     ? 'bg-wilde-black text-wilde-on-ink border-wilde-black'
                     : 'border-wilde-border')}>
@@ -69,7 +69,7 @@ const ExplorePage: React.FC = () => {
                   onClick={() => history.push(ROUTES.CREATOR_PROFILE.replace(':uid', creator.id))}
                   className="flex flex-col items-center gap-1 p-3 border border-wilde-border rounded-lg
                     transition-colors active:bg-wilde-subtle focus-visible:outline-none
-                    focus-visible:ring-2 focus-visible:ring-gold-strong">
+                    focus-visible:ring-2 focus-visible:ring-brand-strong">
                   <Avatar src={creator.photoURL} name={creator.displayName} size="lg" />
                   <span className="text-sm font-medium text-center">{creator.displayName}</span>
                   <span className="text-xs text-wilde-muted">{formatCount(creator.followersCount)} followers</span>

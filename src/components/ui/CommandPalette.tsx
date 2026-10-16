@@ -198,7 +198,7 @@ const CommandPalette: React.FC = () => {
         aria-label="Command palette"
         onClick={e => e.stopPropagation()}
         className="w-full max-w-lg rounded-xl overflow-hidden border border-wilde-border
-          ring-1 ring-gold/25 shadow-lift bg-wilde-panel/95 backdrop-blur-xl"
+          ring-1 ring-brand/25 shadow-lift bg-wilde-panel/95 backdrop-blur-xl"
       >
         <div className="flex items-center gap-2 px-3 border-b border-wilde-border">
           <IonIcon icon={searchOutline} aria-hidden="true" className="text-lg text-wilde-muted shrink-0" />

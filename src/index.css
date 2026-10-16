@@ -9,81 +9,97 @@
  *
  * `.dark` is put on <html> by `useAutoTheme` between 18:00 and 06:00 local.
  */
+/**
+ * Design tokens, from the "Wilde Foundations v0.1" mobile spec.
+ *
+ * Quiet chrome, loud work: the interface is neutral so the content carries the
+ * colour. The only saturated colour in the chrome is `brand` (Carnation); each
+ * creative format then gets one hue of its own (`fmt-*`), always shown with an
+ * icon and a label, never as colour alone.
+ *
+ * Values are bare `R G B` triplets because Tailwind composes them as
+ * `rgb(var(--x) / <alpha-value>)`, which is what makes `bg-wilde-panel/60` work.
+ * `.dark` is put on <html> by `useAutoTheme` between 18:00 and 06:00 local.
+ */
 :root {
-  --wilde-black:   17 17 17;
-  --wilde-cream:   240 237 232;
-  --wilde-muted:   107 107 107;
-  --wilde-border:  229 229 229;
-  --wilde-accent:  245 166 35;
+  --wilde-black:   20 20 20;      /* Ink       #141414 */
+  --wilde-muted:   85 85 92;      /* Ink 2     #55555C */
+  --wilde-border:  231 231 228;   /* Hairline  #E7E7E4 */
+  --wilde-surface: 246 246 244;   /* Ground    #F6F6F4 */
+  --wilde-panel:   255 255 255;   /* Surface   #FFFFFF */
+  --wilde-subtle:  241 241 238;   /* chips, inputs, quiet fills */
+  --wilde-sunken:  231 231 228;   /* skeletons, empty media */
+  --wilde-cream:   241 241 238;
   --wilde-on-ink:  255 255 255;
 
-  /* Warm off-white rather than pure #fff: the brand is cream, and a flat white
-     page makes the card shadows read as dirt instead of depth. */
-  --wilde-surface: 252 251 249;
-  --wilde-panel:   255 255 255;
-  --wilde-subtle:  245 244 241;
-  --wilde-sunken:  235 233 228;
+  /* Carnation: brand, Create, success, focus. 6.5:1 on white. */
+  --brand:        27 107 74;      /* #1B6B4A */
+  --brand-soft:   228 240 233;    /* Tint #E4F0E9 */
+  --brand-strong: 27 107 74;
+  --brand-on:     255 255 255;    /* text/icons sitting on a brand fill */
+  --wilde-accent: 27 107 74;
 
-  /* Decorative only — hairline rims and halos. At 2.3:1 on the light surface
-     it is deliberately below the contrast floor, which is fine for ornament but
-     never acceptable for something the user has to see. */
-  --gold:      201 162 77;
-  --gold-soft: 232 213 168;
-  /* The load-bearing gold: focus rings, drag highlights, the active tab. Darker
-     than the ornament so it clears 3:1 against surface, panel and subtle —
-     WCAG's non-text contrast minimum. Measured, not eyeballed. */
-  --gold-strong: 166 127 38;
+  /* Format colours: fg / tint. */
+  --fmt-book:         44 74 134;    --fmt-book-bg:    230 236 247;
+  --fmt-artwork:      164 71 43;    --fmt-artwork-bg: 246 231 225;
+  --fmt-poem:         110 58 107;   --fmt-poem-bg:    241 230 240;
+  /* Journal is in the spec but not built yet, so its ochre is borrowed by the
+     stage formats (screenplay, play) until it is. */
+  --fmt-stage:        138 98 18;    --fmt-stage-bg:   245 237 220;
 
-  --ion-background-color: rgb(252 251 249);
-  --ion-text-color: rgb(17 17 17);
-  --ion-color-primary: rgb(17 17 17);
-  --ion-color-primary-rgb: 17, 17, 17;
+  --ion-background-color: rgb(246 246 244);
+  --ion-text-color: rgb(20 20 20);
+  --ion-color-primary: rgb(20 20 20);
+  --ion-color-primary-rgb: 20, 20, 20;
   --ion-color-primary-contrast: rgb(255 255 255);
   --ion-card-background: rgb(255 255 255);
   --ion-item-background: rgb(255 255 255);
-  --ion-toolbar-background: rgb(252 251 249);
-  --ion-border-color: rgb(229 229 229);
+  --ion-toolbar-background: rgb(246 246 244);
+  --ion-border-color: rgb(231 231 228);
 }
 
 .dark {
   /* `wilde-black` is the app's "ink": the colour of text and of filled
      buttons. It inverts wholesale so `bg-wilde-black text-wilde-on-ink` stays a
      legible contrast block in both themes instead of going invisible. */
-  --wilde-black:   240 237 232;
-  --wilde-cream:   30 29 27;
-  --wilde-muted:   150 148 143;
-  --wilde-border:  56 54 51;
-  --wilde-accent:  240 178 74;
-  --wilde-on-ink:  18 17 16;
+  --wilde-black:   240 240 236;
+  --wilde-muted:   152 152 150;
+  --wilde-border:  52 52 50;
+  --wilde-surface: 17 17 16;
+  --wilde-panel:   26 26 25;
+  --wilde-subtle:  36 36 34;
+  --wilde-sunken:  46 46 44;
+  --wilde-cream:   36 36 34;
+  --wilde-on-ink:  17 17 16;
 
-  /* Warm-tinted neutrals, not blue-grey — the light theme is cream, and a cold
-     dark mode reads as a different product. */
-  --wilde-surface: 18 17 16;
-  --wilde-panel:   28 26 24;
-  --wilde-subtle:  38 36 33;
-  --wilde-sunken:  48 45 42;
+  /* Lightened so it still reads against a near-black page; white on it would
+     only manage 2.7:1, so fills carry dark text via `brand-on`. */
+  --brand:        79 176 130;
+  --brand-soft:   27 50 40;
+  --brand-strong: 79 176 130;
+  --brand-on:     9 32 22;
+  --wilde-accent: 79 176 130;
 
-  --gold:      212 175 95;
-  --gold-soft: 138 112 58;
-  /* On a near-black page the bright gold already measures 9:1, so the strong
-     variant doesn't need to darken — it brightens instead. */
-  --gold-strong: 224 187 106;
+  --fmt-book:         143 170 225;  --fmt-book-bg:    34 42 60;
+  --fmt-artwork:      224 140 112;  --fmt-artwork-bg: 58 36 30;
+  --fmt-poem:         200 150 196;  --fmt-poem-bg:    52 36 51;
+  --fmt-stage:        214 170 90;   --fmt-stage-bg:   53 44 28;
 
-  --ion-background-color: rgb(18 17 16);
-  --ion-text-color: rgb(240 237 232);
-  --ion-color-primary: rgb(240 237 232);
-  --ion-color-primary-rgb: 240, 237, 232;
-  --ion-color-primary-contrast: rgb(18 17 16);
-  --ion-card-background: rgb(28 26 24);
-  --ion-item-background: rgb(28 26 24);
-  --ion-toolbar-background: rgb(18 17 16);
-  --ion-border-color: rgb(56 54 51);
+  --ion-background-color: rgb(17 17 16);
+  --ion-text-color: rgb(240 240 236);
+  --ion-color-primary: rgb(240 240 236);
+  --ion-color-primary-rgb: 240, 240, 236;
+  --ion-color-primary-contrast: rgb(17 17 16);
+  --ion-card-background: rgb(26 26 25);
+  --ion-item-background: rgb(26 26 25);
+  --ion-toolbar-background: rgb(17 17 16);
+  --ion-border-color: rgb(52 52 50);
 }
 
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Geist', system-ui, sans-serif;
   background-color: rgb(var(--wilde-surface));
   color: rgb(var(--wilde-black));
 }
@@ -108,13 +124,6 @@ body {
     transition: none;
   }
 }
-
-/**
- * The gold edging is done with Tailwind's `ring-*` utilities at the call sites,
- * not with a class here. Both a plain `box-shadow` rule and `shadow-card` write
- * the same property, so one silently wipes out the other; `ring` composes into
- * the same shadow chain Tailwind builds, and the two survive together.
- */
 
 /**
  * Ionic primitives don't take Tailwind classes, so their surfaces are set here.
@@ -149,11 +158,6 @@ ion-tab-bar {
   --color: rgb(var(--wilde-muted));
   --color-selected: rgb(var(--wilde-black));
   border-top: 1px solid rgb(var(--wilde-border));
-  box-shadow: 0 -1px 12px rgb(17 17 17 / 0.05);
-}
-
-.dark ion-tab-bar {
-  box-shadow: none;
 }
 
 /**
@@ -184,36 +188,61 @@ ion-tab-bar {
   }
 }
 
-/* The gold shows up where the eye already is: a short rule over the tab you're
-   on. Enough to warm the chrome, not enough to become the brand colour. */
+/**
+ * Bottom navigation, per the spec: five slots, with Create in the centre as the
+ * only filled colour in the chrome. The selected tab is marked by a filled icon
+ * and a heavier label (set in MainLayout), not by an accent rule.
+ */
+ion-tab-bar {
+  --border: none;
+  padding-top: 6px;
+}
+
 ion-tab-button {
-  position: relative;
+  --padding-top: 2px;
+  --padding-bottom: 2px;
+  font-size: 11px;
+  letter-spacing: 0;
 }
 
-ion-tab-button.tab-selected::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 22px;
-  height: 2px;
-  border-radius: 999px;
-  background: rgb(var(--gold-strong));
-  transform: translateX(-50%);
+/* Set explicitly: Ionic sizes the label by whether the button holds an
+   <ion-icon>, and the Profile tab holds an avatar instead. */
+ion-tab-button ion-label {
+  font-size: 11px;
+  font-weight: 500;
 }
 
-/* Elevation for the shared `Button` only. The ad-hoc pill buttons scattered
-   through the pages stay flat on purpose — a shadow on a 24px chip is noise. */
+ion-tab-button.tab-selected ion-label {
+  font-weight: 700;
+}
+
+ion-tab-button.tab-create {
+  --color: rgb(var(--wilde-black));
+  --color-selected: rgb(var(--wilde-black));
+}
+
+.create-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 40px;
+  border-radius: 16px;
+  background: rgb(var(--brand));
+  color: rgb(var(--brand-on));
+  font-size: 24px;
+  margin-bottom: 2px;
+}
+
+/* Buttons are flat pills in the spec: ink for every primary step, outlined for
+   secondary. No elevation. */
 ion-button {
-  --transition: background 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
-}
-
-ion-button.button-solid {
-  --box-shadow: 0 1px 2px rgb(17 17 17 / 0.06), 0 2px 8px rgb(17 17 17 / 0.10);
-}
-
-.dark ion-button.button-solid {
+  --transition: background 180ms ease, opacity 180ms ease;
+  --border-radius: 999px;
   --box-shadow: none;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /**
@@ -233,14 +262,14 @@ textarea::placeholder {
   color: rgb(var(--wilde-muted));
 }
 
-/* One gold focus treatment for every text field, so focus reads the same
+/* One brand focus treatment for every text field, so focus reads the same
    everywhere. Buttons keep Tailwind's ring utilities. */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   outline: none;
-  border-color: rgb(var(--gold-strong) / 0.8);
-  box-shadow: 0 0 0 3px rgb(var(--gold-strong) / 0.18);
+  border-color: rgb(var(--brand-strong) / 0.8);
+  box-shadow: 0 0 0 3px rgb(var(--brand-strong) / 0.18);
 }
 
 .rich-text-editor:empty:before {
@@ -279,3 +308,7 @@ select:focus-visible {
   color: rgb(var(--wilde-black));
   border: 1px solid rgb(var(--wilde-border));
 }
+
+/* Horizontal chip and rail rows scroll, but a visible scrollbar on them is noise. */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
