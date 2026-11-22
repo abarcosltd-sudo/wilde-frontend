@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
-import { subscribeToAuth } from '@/firebase/auth.helpers';
+import { subscribeToAuth, signOut } from '@/firebase/auth.helpers';
 import { getDocument, createDocument } from '@/firebase/firestore.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
+import { useUiStore } from '@/store/slices/uiStore';
 import { Collections } from '@/firebase/firestore.helpers';
+import { generateUsername } from '@/utils/username';
 import { User } from '@/types';
 
 export const useAuth = () => {
@@ -16,15 +18,28 @@ export const useAuth = () => {
           let profile = await getDocument<User>(Collections.USERS, fbUser.uid);
           const isOAuth = fbUser.providerData.some(p => p.providerId !== 'password');
           if (!profile && isOAuth) {
-            await createDocument(Collections.USERS, {
-              displayName: fbUser.displayName || 'New Creative',
-              // Derived from the address but never stored — the Users document
-              // is world-readable, so email stays in Firebase Auth only.
-              username:    fbUser.email?.split('@')[0] || fbUser.uid.slice(0, 8),
-              photoURL:    fbUser.photoURL || undefined,
-              roles: [], isPremium: false,
-              followersCount: 0, followingCount: 0, worksCount: 0, totalSales: 0, streakCount: 0,
-            }, fbUser.uid);
+            try {
+              await createDocument(Collections.USERS, {
+                displayName: fbUser.displayName || 'New Creative',
+                // Never derived from the email address: the Users document is
+                // world-readable, so email stays in Firebase Auth only.
+                username:    generateUsername(fbUser.displayName, fbUser.uid),
+                photoURL:    fbUser.photoURL || undefined,
+                roles: [], isPremium: false,
+                followersCount: 0, followingCount: 0, worksCount: 0, totalSales: 0, streakCount: 0,
+              }, fbUser.uid);
+            } catch (err) {
+              // Signed in with Google but no profile to show for it. Left alone
+              // that is a dead end: Firebase says signed in, the app says
+              // nobody is, and the sign-in screen stays up with no explanation.
+              // Say so and sign out, so the next attempt starts clean.
+              console.error('Failed to create profile for new Google user:', err);
+              useUiStore.getState().showToast(
+                "We couldn't finish setting up your account. Please try signing in again.", 'danger');
+              await signOut();
+              store.setUser(null);
+              return;
+            }
             profile = await getDocument<User>(Collections.USERS, fbUser.uid);
           }
           store.setUser(profile ? { ...profile, uid: fbUser.uid } : null);
