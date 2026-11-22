@@ -11,6 +11,7 @@ import { useUser } from '@/hooks/useUser';
 import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useTrackView } from '@/hooks/useTrackView';
 import { ROUTES } from '@/constants';
+import CommentButton from '@/features/comments/components/CommentButton';
 import { formatCount } from '@/utils';
 import { Work } from '@/types';
 import Avatar from '@/components/ui/Avatar';
@@ -116,6 +117,7 @@ const ReadWorkPage: React.FC = () => {
                 <span className="text-sm font-medium">{author?.displayName ?? '…'}</span>
 
                 <div className="flex items-center gap-3 ml-auto text-xs text-wilde-muted">
+                  <CommentButton work={work} iconClass="text-base" />
                   <button onClick={() => toggleLike(work.id)}
                     aria-pressed={isLiked}
                     aria-label={`${isLiked ? 'Unlike' : 'Like'} this work`}
