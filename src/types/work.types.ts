@@ -20,6 +20,11 @@ export interface Work {
   currency?: 'NGN' | 'USD';
   viewCount: number;
   likeCount: number;
+  /**
+   * Comments on the published work. Stepped by whoever comments, like likeCount;
+   * can lag the real list, so the list wins once it is loaded (see commentRules).
+   */
+  commentCount?: number;
   tags: string[];
   collaborators?: string[];
   createdAt: string;

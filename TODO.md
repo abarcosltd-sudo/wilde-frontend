@@ -527,6 +527,46 @@ Reported: after publishing a book, tapping it opened the editor, not the book.
 - [ ] **Not tested against the real database**: the save and publish writes. Verified with
   made-up data only, and unit tests cover the routing and status rules.
 
+## Comments on works (2026-11-23)
+
+From the product feedback: a comment button and a way to comment on books, artworks and
+the other content types.
+
+- [x] **Comment button and sheet.** A button with a count on every feed post and on the
+  reader, opening one shared bottom panel (`CommentsSheet`). Works for every work type.
+  Published works only: comments on a draft are the collaborators' working notes.
+  Newest first, delete your own, the work's author can delete any comment under their
+  work, authors are notified, and moderator-hidden comments are not shown.
+- [x] **Kept apart from the other two kinds of comment.** `Comments` already holds
+  community-post comments and the collaborators' notes on a draft, both keyed by `postId`.
+  Work comments carry `parentType: 'work'` and `parentId`, so they can never appear in
+  either.
+- [x] **Admin panel can now read comments and posts.** Their tables looked for a `body`
+  field, but the app stores `content`, so every row showed empty text. Notifications has
+  the same kind of mismatch (`title`/`body`/`type` vs the app's `message`/`icon`); not fixed.
+- [ ] **Deploy `firestore.rules`.** Three changes, none of which the app needs in order to
+  keep working (it degrades gracefully): `commentCount` may be stepped by whoever comments
+  (`isCommentCountStep`, which also accepts the first step on works that have no counter
+  yet, unlike `isCounterStep`); work comments must be bounded text on a *published* work;
+  and a work's author may delete comments under it. Until then the count under a post may
+  stay at 0 (the sheet corrects it once opened) and authors cannot delete others' comments.
+  - **The rules were not run against the emulator** (no Java here). Syntax balances, but
+    the first deploy and the first real comment are the test. `firebase deploy --only
+    firestore:rules` rejects invalid rules without applying them.
+- [ ] **No way to report a comment.** The admin queue has a "flagged comments" lane, but
+  nothing sets it: users cannot update someone else's comment, so a report needs its own
+  collection or a counter rule.
+- [ ] **No spam limit.** Anyone signed in can post as fast as they can type. Needs a rate
+  limit (a server route, or a per-user cooldown rule).
+- [ ] **No pagination.** All of a work's comments load at once, sorted on the device, because
+  ordering with a limit would need a new composite index. Fine until a work has hundreds.
+- [ ] **Comments are public, and so are collaborators' draft notes.** `Comments` is readable
+  by anyone, so the notes collaborators leave on a draft can be read through the database
+  even though no screen shows them. Same root cause as draft visibility.
+- [ ] **Anyone signed in can comment on a paid work without buying it.** Probably fine (it
+  is a conversation about the work), but it is a choice, not a decision anyone made.
+- [ ] **Replies, likes on comments, mentions** are not built.
+
 ## Data protection & privacy testing (2026-10-06)
 
 Full plan in `DATA-SECURITY-ROADMAP.md` (GDPR, NDPA/NDPR/GAID, PCI SAQ A, with HIPAA as

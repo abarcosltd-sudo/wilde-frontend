@@ -44,6 +44,25 @@ service cloud.firestore {
          || request.resource.data[field] == resource.data[field] - 1);
     }
 
+    /**
+     * Like `isCounterStep`, for the comment count on a work, with one difference:
+     * the field may not exist yet. Works are created with likeCount and viewCount
+     * but not commentCount, and every work published before comments existed
+     * lacks it. `isCounterStep` does arithmetic on the current value, so on those
+     * it errors and denies, which would reject the very first comment's count
+     * step and every one after it. Here a missing field may be started at 1, and
+     * the count may never go below zero.
+     */
+    function isCommentCountStep() {
+      return isAuth()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount', 'updatedAt'])
+        && request.resource.data.commentCount >= 0
+        && (('commentCount' in resource.data)
+            ? (request.resource.data.commentCount == resource.data.commentCount + 1
+               || request.resource.data.commentCount == resource.data.commentCount - 1)
+            : request.resource.data.commentCount == 1);
+    }
+
     function work(workId) {
       return get(/databases/$(database)/documents/Works/$(workId)).data;
     }
@@ -90,12 +109,13 @@ service cloud.firestore {
        * Editing is author-only — collaborators may change the text (see
        * /Chapters) but not retitle, reprice, publish or delete.
        *
-       * likeCount and viewCount are the exceptions: they are stepped by the
-       * reader, who is by definition not the author.
+       * likeCount, viewCount and commentCount are the exceptions: they are
+       * stepped by the reader, who is by definition not the author.
        */
       allow update: if (isAuth() && request.auth.uid == resource.data.authorId)
                     || isCounterStep('likeCount')
-                    || isCounterStep('viewCount');
+                    || isCounterStep('viewCount')
+                    || isCommentCountStep();
       // Moderation: unpublish or remove a work that breaks the rules.
       allow update, delete: if canModerate();
     }
@@ -151,8 +171,35 @@ service cloud.firestore {
 
     match /Comments/{commentId} {
       allow read: if true;
-      allow create: if isAuth() && request.auth.uid == request.resource.data.authorId;
-      allow delete: if isAuth() && request.auth.uid == resource.data.authorId;
+      /**
+       * Two kinds share this collection. Community-post comments and the
+       * collaborators' notes on a draft carry no `parentType` and keep the
+       * original rule: any signed-in user, as themselves.
+       *
+       * Public comments on a work carry `parentType: 'work'` and are held to
+       * more: bounded text, and a work that is actually published. Without the
+       * published check, anyone who guessed a draft's id could attach comments
+       * to it.
+       */
+      allow create: if isAuth() && request.auth.uid == request.resource.data.authorId
+        && (!('parentType' in request.resource.data) || (
+          request.resource.data.parentType == 'work'
+          && request.resource.data.content is string
+          && request.resource.data.content.size() > 0
+          && request.resource.data.content.size() <= 1000
+          && get(/databases/$(database)/documents/Works/$(request.resource.data.parentId)).data.status == 'published'
+        ));
+      /**
+       * The author of a comment may delete it, and so may the author of the work
+       * it is on: otherwise nobody could clear abuse from under their own book.
+       * `.get('parentType', '')` because older comments have no such field and
+       * reading a missing key would deny the request outright.
+       */
+      allow delete: if isAuth() && (
+        request.auth.uid == resource.data.authorId
+        || (resource.data.get('parentType', '') == 'work'
+            && get(/databases/$(database)/documents/Works/$(resource.data.parentId)).data.authorId == request.auth.uid)
+      );
       allow update, delete: if canModerate();
     }
 

@@ -312,3 +312,13 @@ select:focus-visible {
 /* Horizontal chip and rail rows scroll, but a visible scrollbar on them is noise. */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* The comments panel: a bottom-aligned card at a fixed share of the screen, so
+   its footer (the comment box) stays on screen. Ionic centres modals that set a
+   height; aligning to the end puts it at the bottom like a sheet. */
+ion-modal.comments-sheet {
+  --height: 80%;
+  --max-height: 760px;
+  --border-radius: 24px 24px 0 0;
+  align-items: flex-end;
+}

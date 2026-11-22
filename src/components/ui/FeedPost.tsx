@@ -10,6 +10,7 @@ import { useUser } from '@/hooks/useUser';
 import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { useAuthStore } from '@/store/slices/authStore';
+import CommentButton from '@/features/comments/components/CommentButton';
 import { ROUTES } from '@/constants';
 import Avatar from './Avatar';
 import FormatTag from './FormatTag';
@@ -153,6 +154,7 @@ const FeedPost: React.FC<{ work: Work }> = ({ work }) => {
       </div>
 
       <footer className="flex items-center gap-5 mt-3 text-[15px] text-wilde-muted">
+        <CommentButton work={work} />
         <button
           onClick={() => toggleLike(work.id)}
           aria-pressed={isLiked}
