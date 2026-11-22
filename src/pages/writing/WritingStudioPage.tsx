@@ -13,6 +13,7 @@ import { useChapters } from '@/features/writing/hooks/useChapters';
 import { chapterLabel } from '@/features/writing/chapterLabel';
 import { getStoragePath } from '@/firebase/storage.helpers';
 import { useAuthStore } from '@/store/slices/authStore';
+import { useUiStore } from '@/store/slices/uiStore';
 import { useUsers } from '@/hooks/useUser';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { ROUTES } from '@/constants';
@@ -28,6 +29,7 @@ import AiPromptModal from '@/features/ai-assistant/components/AiPromptModal';
 import { exportWork, EXPORT_FORMATS, ExportFormat } from '@/features/premium/services/export.service';
 import { escapeHtml, formatBytes } from '@/utils';
 import Swal from '@/utils/swal';
+import { saveStatusFor } from '@/utils/workFlow';
 
 const TOOLBAR_BUTTONS = [
   { key: 'bold', label: 'Bold', display: 'B', command: 'bold' },
@@ -75,6 +77,7 @@ const WritingStudioPage: React.FC = () => {
   const { user } = useAuthStore();
   const { currentWork, updateContent, updateTitle, setCoverImage, setCollaborators, isSaving } = useWritingStore();
   const { load, save, publish } = useWorkEditor(workId);
+  const showToast = useUiStore(s => s.showToast);
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isAiPromptOpen, setAiPromptOpen] = useState(false);
@@ -99,6 +102,9 @@ const WritingStudioPage: React.FC = () => {
   // (screenplay, play) stay compact because their layout depends on column width.
   const bodySize = config.font.includes('mono') ? 'text-sm leading-relaxed' : 'text-[18px] leading-[1.65]';
   const hasCover = !!currentWork?.coverImageUrl;
+  // Already published: readers can see this version, so saving and pricing mean
+  // something different from what they do on a draft.
+  const isLive = currentWork?.status === 'published';
 
   // Long works keep their text in Chapter documents; every other type keeps a
   // single flat `content` string on the Work itself.
@@ -209,27 +215,76 @@ const WritingStudioPage: React.FC = () => {
     }
   };
 
-  const handleSaveDraft = async () => {
+  /**
+   * One save for both states, because they are the same act: keep my work. What
+   * differs is the status it must keep. A draft stays a draft, and a published
+   * work stays published; it was the single "Save Draft" that quietly pulled
+   * live work back to a draft. A draft asks first, as it always did; a live
+   * work does not, since nothing about who can see it is changing.
+   */
+  const handleSave = async () => {
+    if (!currentWork) return;
+    if (!isLive) {
+      const result = await Swal.fire({
+        icon: 'question',
+        title: 'Save as draft?',
+        text: 'Your changes will be saved as a draft. You can publish later.',
+        showCancelButton: true,
+        confirmButtonText: 'Save Draft',
+        cancelButtonText: 'Cancel',
+      });
+      if (!result.isConfirmed) return;
+    }
+    try {
+      await flushActiveChapter();
+      await save(saveStatusFor(currentWork.status));
+      showToast(isLive ? 'Changes saved' : 'Draft saved', 'success');
+    } catch {
+      showToast("Couldn't save. Please try again.", 'danger');
+    }
+  };
+
+  // Takes a work back out of feeds, the marketplace and the author's profile. The
+  // text is kept; only visibility changes. Deliberate and confirmed, and never
+  // reachable by tapping an ordinary save.
+  const handleUnpublish = async () => {
     const result = await Swal.fire({
-      icon: 'question',
-      title: 'Save as draft?',
-      text: 'Your changes will be saved privately. You can publish later.',
+      icon: 'warning',
+      title: 'Unpublish this work?',
+      text: 'It will leave feeds, the marketplace and your profile, and become a draft again. ' +
+        'Your text is kept, and you can publish it again any time.',
       showCancelButton: true,
-      confirmButtonText: 'Save Draft',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: 'Unpublish',
+      cancelButtonText: 'Keep it live',
+      focusCancel: true,
     });
-    if (result.isConfirmed) {
+    if (!result.isConfirmed) return;
+    try {
       await flushActiveChapter();
       await save('draft');
+      showToast('Moved back to drafts', 'success');
+    } catch {
+      showToast("Couldn't unpublish. Please try again.", 'danger');
     }
   };
 
   // The confirm step is the publish modal itself, which also collects the price.
+  // Afterwards the author lands on the work as a reader sees it, with a message,
+  // rather than on Home with no sign it happened. `replace`, so Back leads to
+  // wherever they came from and not into the editor they just left.
   const handlePublish = async (pricing: PublishPricing) => {
+    const wasLive = isLive;
     setPublishOpen(false);
-    await flushActiveChapter();
-    await publish(pricing);
-    history.push(ROUTES.HOME);
+    try {
+      await flushActiveChapter();
+      await publish(pricing);
+    } catch {
+      showToast(wasLive ? "Couldn't update the price. Please try again."
+        : "Couldn't publish. Please try again.", 'danger');
+      return;
+    }
+    showToast(wasLive ? 'Price updated' : 'Published. Your work is live', 'success');
+    history.replace(ROUTES.READ_WORK.replace(':workId', workId));
   };
 
   // `useUsers` re-derives the profiles from the stored ids, so this only needs
@@ -269,6 +324,30 @@ const WritingStudioPage: React.FC = () => {
                 thing — and one that can't be dropped onto. */}
             <IconButton icon={downloadOutline} label="Export" onClick={handleExport} />
           </div>
+          {/* Says what state the work is in, and offers the two things that only
+              make sense once it is live: see it as readers do, or take it down. */}
+          {isLive && (
+            <div className="flex items-center gap-3 px-4 py-2 border-t border-wilde-border text-[13px]">
+              <span className="flex items-center gap-1.5 font-semibold text-brand">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-brand" />
+                Published
+              </span>
+              <span className="hidden sm:inline text-wilde-muted truncate">Readers see your saved version</span>
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <button type="button"
+                  onClick={() => history.push(ROUTES.READ_WORK.replace(':workId', workId))}
+                  className="rounded-full px-3 py-1.5 font-semibold active:bg-wilde-subtle
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong">
+                  View
+                </button>
+                <button type="button" onClick={handleUnpublish} disabled={isSaving}
+                  className="rounded-full px-3 py-1.5 font-semibold text-fmt-artwork active:bg-wilde-subtle
+                    disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong">
+                  Unpublish
+                </button>
+              </span>
+            </div>
+          )}
           {config.showToolbar && (
             <div className="flex gap-2 px-4 py-2 border-t border-wilde-border">
               {TOOLBAR_BUTTONS.map(t => (
@@ -389,9 +468,9 @@ const WritingStudioPage: React.FC = () => {
           {/* Saving mid-upload would persist the work without the cover URL the
               user is watching arrive, so both writes wait for it. */}
           <div className="flex gap-2 p-4 text-center">
-            <button onClick={handleSaveDraft} disabled={isSaving || coverUpload.isBusy}
+            <button onClick={handleSave} disabled={isSaving || coverUpload.isBusy}
               className="flex-1 border border-wilde-border rounded-full py-3 text-[15px] font-semibold disabled:opacity-50">
-              Save Draft
+              {isLive ? 'Save changes' : 'Save Draft'}
             </button>
             <button onClick={() => setPickerOpen(true)}
               className="flex-1 border border-wilde-border rounded-full py-3 text-[15px] font-semibold">
@@ -399,7 +478,7 @@ const WritingStudioPage: React.FC = () => {
             </button>
             <button onClick={() => setPublishOpen(true)} disabled={isSaving || coverUpload.isBusy}
               className="flex-1 bg-wilde-black text-wilde-on-ink rounded-full py-3 text-[15px] font-semibold disabled:opacity-50">
-              Publish
+              {isLive ? 'Price' : 'Publish'}
             </button>
           </div>
         </IonToolbar>
@@ -417,6 +496,7 @@ const WritingStudioPage: React.FC = () => {
         currentPrice={currentWork?.price}
         currentCurrency={currentWork?.currency}
         isPublishing={isSaving}
+        isLive={isLive}
         onConfirm={handlePublish} />
 
       <AiPromptModal

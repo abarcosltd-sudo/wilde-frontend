@@ -496,6 +496,37 @@ From "WIlde document update.docx" (items 1 and 2 of its four requests).
   Profile into the menu. Messaging does not exist (Hire is one-directional), so the tab
   bar is unchanged until that is decided.
 
+## Publish and edit flow (2026-11-23)
+
+Reported: after publishing a book, tapping it opened the editor, not the book.
+
+- [x] **Own published work opens the reader.** Tapping your own work in the feed or on
+  your profile used to open the editor whatever its status (`workRoute`,
+  `utils/workFlow.ts`). Drafts still open the editor; published work opens the reader, as
+  it does for everyone else.
+- [x] **Edit button on the reader**, for the author only.
+- [x] **Publishing lands on the work**, with a "Published" message, instead of on Home with
+  no sign it happened. `replace`, so Back does not lead into the editor.
+- [x] **The editor knows when a work is live.** A "Published" bar with View and Unpublish;
+  "Save Draft" becomes "Save changes" and keeps the work published; Publish becomes
+  "Price", and its dialog reads as a price change. Unpublish is confirmed and defaults to
+  "Keep it live".
+  - This fixes a real hazard: the editor's only save wrote `draft`, so fixing a typo on a
+    live book silently unpublished it.
+  - A failed save used to leave the editor stuck "saving" for the session, disabling Publish.
+    Fixed in `useWorkEditor`.
+- [ ] **Unpublish does not hide the text.** `Works` is readable by anyone, so an unpublished
+  work is still fetchable by its link. It leaves feeds, the marketplace and the profile.
+  Same root cause as the draft-visibility item below.
+- [ ] **"It's live" screen** from the design, with Copy link and Share. Needs a public page
+  for published works first: every work page sits behind sign-in today.
+- [ ] **Collaborators cannot open the editor.** The Studio sends anyone who is not the author
+  to the reader, although the rules let collaborators edit chapter text.
+- [ ] **No unsaved-changes warning** when leaving the editor, and no autosave (the design
+  shows "Draft saved just now").
+- [ ] **Not tested against the real database**: the save and publish writes. Verified with
+  made-up data only, and unit tests cover the routing and status rules.
+
 ## Data protection & privacy testing (2026-10-06)
 
 Full plan in `DATA-SECURITY-ROADMAP.md` (GDPR, NDPA/NDPR/GAID, PCI SAQ A, with HIPAA as

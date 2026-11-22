@@ -7,8 +7,8 @@ import { formatCount, truncate } from '@/utils';
 import { useUser } from '@/hooks/useUser';
 import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useAuthStore } from '@/store/slices/authStore';
-import { ROUTES } from '@/constants';
 import { FORMATS } from '@/utils/formats';
+import { workRoute } from '@/utils/workFlow';
 import Avatar from './Avatar';
 import { Skeleton } from './Skeleton';
 
@@ -42,8 +42,7 @@ const WorkCard: React.FC<WorkCardProps> = ({ work, onClick, size = 'default' }) 
 
   const handleClick = () => {
     if (onClick) { onClick(); return; }
-    const route = user?.id === work.authorId ? ROUTES.WRITING_STUDIO : ROUTES.READ_WORK;
-    history.push(route.replace(':workId', work.id));
+    history.push(workRoute(work, user?.id));
   };
 
   return (

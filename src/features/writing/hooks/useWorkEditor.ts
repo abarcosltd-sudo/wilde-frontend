@@ -27,47 +27,60 @@ export const useWorkEditor = (workId: string) => {
   const save = useCallback(async (status: 'draft' | 'published', pricing?: PublishPricing) => {
     if (!currentWork) return;
     setSaving(true);
-    const wasPublished = currentWork.status === 'published';
-    const payload: Record<string, unknown> = {
-      content: currentWork.content ?? '',
-      title:   currentWork.title,
-      status,
-    };
-    // Price is only ever set at publish time, so a draft save can't silently
-    // change what a work costs. `price: 0` is what makes a work free — the
-    // marketplace and the paywall both key off `price > 0`.
-    if (pricing) {
-      payload.price = pricing.price;
-      payload.currency = pricing.currency;
-    }
-    // Always written, including as '' — writing it only when truthy meant a
-    // removed cover image could never be cleared from the document.
-    payload.coverImageUrl = currentWork.coverImageUrl ?? '';
-    if (currentWork.collaborators) payload.collaborators = currentWork.collaborators;
-    await updateDocument(Collections.WORKS, workId, payload);
+    try {
+      const wasPublished = currentWork.status === 'published';
+      const payload: Record<string, unknown> = {
+        content: currentWork.content ?? '',
+        title:   currentWork.title,
+        status,
+      };
+      // Price is only ever set at publish time, so a draft save can't silently
+      // change what a work costs. `price: 0` is what makes a work free — the
+      // marketplace and the paywall both key off `price > 0`.
+      if (pricing) {
+        payload.price = pricing.price;
+        payload.currency = pricing.currency;
+      }
+      // Always written, including as '' — writing it only when truthy meant a
+      // removed cover image could never be cleared from the document.
+      payload.coverImageUrl = currentWork.coverImageUrl ?? '';
+      if (currentWork.collaborators) payload.collaborators = currentWork.collaborators;
+      await updateDocument(Collections.WORKS, workId, payload);
 
-    // Every surface that lists or renders this work holds it in a cache with a
-    // 5-minute stale time, so without this a save is invisible until that
-    // expires — a newly published work, a retitled one, or a freshly added
-    // cover image would all keep showing the previous version.
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ['home-feed'] }),
-      qc.invalidateQueries({ queryKey: ['explore'] }),
-      qc.invalidateQueries({ queryKey: ['work', workId] }),
-      qc.invalidateQueries({ queryKey: ['creator-works', currentWork.authorId] }),
-      qc.invalidateQueries({ queryKey: ['my-works'] }),
-      qc.invalidateQueries({ queryKey: ['market-works'] }),
-      qc.invalidateQueries({ queryKey: ['profile-analytics', currentWork.authorId] }),
-    ]);
+      // Every surface that lists or renders this work holds it in a cache with a
+      // 5-minute stale time, so without this a save is invisible until that
+      // expires — a newly published work, a retitled one, or a freshly added
+      // cover image would all keep showing the previous version.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['home-feed'] }),
+        qc.invalidateQueries({ queryKey: ['explore'] }),
+        qc.invalidateQueries({ queryKey: ['work', workId] }),
+        qc.invalidateQueries({ queryKey: ['creator-works', currentWork.authorId] }),
+        qc.invalidateQueries({ queryKey: ['my-works'] }),
+        qc.invalidateQueries({ queryKey: ['market-works'] }),
+        qc.invalidateQueries({ queryKey: ['profile-analytics', currentWork.authorId] }),
+      ]);
 
-    logWrite();
-    if (user && status === 'published' && !wasPublished) {
-      queryDocuments<Follow>(Collections.FOLLOWS, [where('followingId', '==', user.uid)])
-        .then(follows => Promise.all(follows.map(f =>
-          notify(f.followerId, '📖', `${user.displayName} published "${currentWork.title}"`))))
-        .catch(() => {});
+      // The editor stays open after a save now (Save changes, Unpublish), so what
+      // it believes about the work has to follow what was just written. Merged
+      // into whatever is there rather than replaced: the author may have kept
+      // typing while the write was in flight, and that must not be thrown away.
+      useWritingStore.setState(s => ({
+        currentWork: s.currentWork ? { ...s.currentWork, status } : null,
+      }));
+
+      logWrite();
+      if (user && status === 'published' && !wasPublished) {
+        queryDocuments<Follow>(Collections.FOLLOWS, [where('followingId', '==', user.uid)])
+          .then(follows => Promise.all(follows.map(f =>
+            notify(f.followerId, '📖', `${user.displayName} published "${currentWork.title}"`))))
+          .catch(() => {});
+      }
+    } finally {
+      // A failed write used to leave this stuck on, which disabled Publish and
+      // Save for the rest of the session.
+      setSaving(false);
     }
-    setSaving(false);
   }, [currentWork, workId, user, logWrite, qc]);
 
   const publish = (pricing: PublishPricing) => save('published', pricing);

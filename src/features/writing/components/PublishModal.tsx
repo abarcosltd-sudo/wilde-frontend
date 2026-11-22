@@ -15,6 +15,12 @@ interface Props {
   currentPrice?: number;
   currentCurrency?: Currency;
   isPublishing?: boolean;
+  /**
+   * The work is already published, so this is a change to something readers can
+   * see now, not a first publish. The wording says so: "Publish" and "this will
+   * make your work visible" are wrong for a book that has been live for weeks.
+   */
+  isLive?: boolean;
   onConfirm: (pricing: PublishPricing) => void;
 }
 
@@ -27,7 +33,7 @@ interface Props {
  * the control on a draft would imply the price does something before then.
  */
 const PublishModal: React.FC<Props> = ({
-  isOpen, onClose, currentPrice, currentCurrency, isPublishing, onConfirm,
+  isOpen, onClose, currentPrice, currentCurrency, isPublishing, isLive, onConfirm,
 }) => {
   const [isPaid, setIsPaid] = useState(false);
   const [price, setPrice] = useState('');
@@ -60,13 +66,15 @@ const PublishModal: React.FC<Props> = ({
             className="min-w-11 min-h-11 flex items-center justify-center text-xl rounded-full active:bg-wilde-subtle">
             <IonIcon icon={closeOutline} aria-hidden="true" />
           </button>
-          <h2 className="font-bold">Publish</h2>
+          <h2 className="font-bold">{isLive ? 'Price & availability' : 'Publish'}</h2>
           <span className="min-w-11" />
         </div>
 
         <div className="flex flex-col gap-4">
           <p className="text-sm text-wilde-muted">
-            This will make your work visible to everyone on WILDE.
+            {isLive
+              ? 'Your work is live. A change here applies to everyone straight away.'
+              : 'This will make your work visible to everyone on WILDE.'}
           </p>
 
           <fieldset>
@@ -125,8 +133,8 @@ const PublishModal: React.FC<Props> = ({
           <Button expand="block" isLoading={isPublishing} disabled={!canPublish}
             onClick={handleConfirm}>
             {isPaid && amount >= minimum
-              ? `Publish for ${formatCurrency(amount, currency)}`
-              : 'Publish free'}
+              ? `${isLive ? 'Update price to' : 'Publish for'} ${formatCurrency(amount, currency)}`
+              : isLive ? 'Make it free' : 'Publish free'}
           </Button>
         </div>
       </IonContent>
