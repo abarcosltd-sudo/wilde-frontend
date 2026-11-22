@@ -468,6 +468,46 @@ a benchmark only). Findings from reading the code, each to be confirmed by a tes
 - [ ] **Privacy page is inaccurate** (drafts claim; stale Hire/`mailto:` warning) and
   there is no real privacy notice or terms of service.
 - [ ] **Google sign-in publishes part of the email**: `useAuth.ts:23` builds the public
+## Menu and draft deletion (2026-11-22)
+
+From "WIlde document update.docx" (items 1 and 2 of its four requests).
+
+- [x] **Side menu** — hamburger on Home (wordmark centred, search right, as in the
+  design) opens a drawer: profile summary, Profile, Drafts (with count), Creator
+  studio, Community, Settings & privacy, Help & support, a Dark mode switch, Log out.
+  Focus moves in on open and back on close, Tab stays inside, Escape closes.
+  - The bell left Home's header; the Activity tab carries the unread badge.
+  - The switch pins Light or Dark. Settings keeps the third choice, Auto (by the
+    clock), and the menu names it when Auto is active.
+  - `?tab=` on the profile URL now drives the open tab, so the menu can link straight
+    to Drafts and Studio.
+- [x] **Delete drafts** — a bin on each draft card, a confirm dialog that defaults to
+  "Keep it", and a permanent delete of the draft, its chapters and its cover image
+  (`deleteDraft.ts`; order matters, see its comment). Drafts only. The card leaves the
+  list immediately and returns with a message if the delete fails.
+- [ ] **Menu rows still to add.** Each goes into `items` in `SideMenu.tsx` when its
+  screen exists:
+  - **Orders & purchases** — the Orders screen is in progress elsewhere (uncommitted at
+    the time of writing). Once it lands, add `{ label: 'Orders & purchases', icon:
+    bagOutline, to: ROUTES.ORDERS }`.
+  - **Saved** — needs bookmarks (see "Not started" above).
+  - **Earnings & payouts** — payouts are not built.
+  - **Wilde Agent** — shelved above for privacy reasons.
+- [ ] **"Recently deleted" / restore.** The design shows it next to Drafts. Deleting is
+  permanent today, deliberately: a restore window means keeping deleted writing for a
+  while, and `Works` is readable by anyone, so a soft-deleted draft would stay public.
+  Do this after the draft-visibility fix, and set the retention period in the
+  data-protection plan.
+- [ ] **Draft delete leaves two things behind.** Comments collaborators left on the
+  draft (only their author or staff can delete a comment) and any Likes rows. Neither
+  exposes the draft's text. A cleaner fix is a server-side job.
+- [ ] **"Drafts only" is enforced in the app, not by the rules.** `firestore.rules`
+  lets an author delete any of their own works, published or not. Decide whether that
+  is intended; if not, add `resource.data.status == 'draft'` to the delete rule.
+- [ ] **Messages tab.** The new figures replace the Profile tab with Messages and move
+  Profile into the menu. Messaging does not exist (Hire is one-directional), so the tab
+  bar is unchanged until that is decided.
+
   `username` from `email.split('@')[0]`.
 - [ ] **Latent email leak**: backend `/auth/sync-user` writes `email` into the
   world-readable `Users` doc (uncalled today); `Reminders` also stores email.

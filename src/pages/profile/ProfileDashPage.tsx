@@ -6,16 +6,19 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useProfileDash } from '@/features/profile/hooks/useProfileDash';
 import { useMyWorks } from '@/features/profile/hooks/useMyWorks';
+import { useDeleteDraft } from '@/features/writing/hooks/useDeleteDraft';
 import { useStreaks } from '@/features/streaks/hooks/useStreaks';
 import Avatar from '@/components/ui/Avatar';
 import StreakBadge from '@/components/ui/StreakBadge';
 import IconButton from '@/components/ui/IconButton';
 import WorkGrid from '@/components/ui/WorkGrid';
+import DraftCard from '@/components/ui/DraftCard';
 import { Skeleton, SkeletonScreen, WorkGridSkeleton } from '@/components/ui/Skeleton';
 import EditProfileModal from '@/features/profile/components/EditProfileModal';
 import { formatCount, formatCurrency } from '@/utils';
 import { ROUTES } from '@/constants';
-import { CreativeRole } from '@/types';
+import Swal from '@/utils/swal';
+import { CreativeRole, Work } from '@/types';
 
 type Tab = 'works' | 'drafts' | 'studio';
 
@@ -32,6 +35,15 @@ const ROLE_STYLE: Record<CreativeRole, string> = {
 
 const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/**
+ * The open tab lives in the URL (`?tab=drafts`), so the side menu can link
+ * straight to Drafts or the Studio, and the page and the link never disagree.
+ */
+const tabFromSearch = (search: string): Tab => {
+  const t = new URLSearchParams(search).get('tab');
+  return t === 'drafts' || t === 'studio' ? t : 'works';
+};
+
 const ProfileDashPage: React.FC = () => {
   const { user } = useAuthStore();
   const { analytics, isLoading: isAnalyticsLoading } = useProfileDash();
@@ -40,11 +52,27 @@ const ProfileDashPage: React.FC = () => {
   const history = useHistory();
   const { search } = useLocation();
   const [isEditOpen, setEditOpen] = useState(false);
-  const requested = new URLSearchParams(search).get('tab');
-  const [tab, setTab] = useState<Tab>(
-    requested === 'drafts' || requested === 'studio' ? requested : 'works');
+  const { removeDraft, deletingId } = useDeleteDraft();
+  const tab = tabFromSearch(search);
+  const setTab = (next: Tab) =>
+    history.replace(next === 'works' ? ROUTES.PROFILE : `${ROUTES.PROFILE}?tab=${next}`);
 
   if (!user) return null;
+
+  // Focus starts on Cancel: the safe answer should be the one Enter gives.
+  const confirmDelete = async (work: Work) => {
+    const name = work.title && work.title !== 'Untitled' ? `"${work.title}"` : 'This draft';
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'Delete this draft?',
+      text: `${name} will be permanently deleted, along with its chapters and cover image. This can't be undone.`,
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Keep it',
+      focusCancel: true,
+    });
+    if (result.isConfirmed) removeDraft(work);
+  };
 
   const tabs: { id: Tab; label: string; private?: boolean }[] = [
     { id: 'works',  label: 'Works' },
@@ -139,8 +167,21 @@ const ProfileDashPage: React.FC = () => {
                         : 'Anything you start but have not published will wait here, visible only to you.'}
                     </p>
                   </div>
+                ) : tab === 'works' ? (
+                  <WorkGrid works={published} />
                 ) : (
-                  <WorkGrid works={tab === 'works' ? published : drafts} />
+                  <>
+                    <p className="flex items-center gap-1.5 text-[13px] text-wilde-muted mb-3">
+                      <IonIcon icon={lockClosedOutline} aria-hidden="true" />
+                      Drafts don't appear on your public profile
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 animate-fade-in">
+                      {drafts.map(w => (
+                        <DraftCard key={w.id} work={w} onDelete={confirmDelete}
+                          isDeleting={deletingId === w.id} />
+                      ))}
+                    </div>
+                  </>
                 )
               )}
 

@@ -8,6 +8,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 import CreateMenuModal from '@/features/writing/components/CreateMenuModal';
+import SideMenu from '@/components/layout/SideMenu';
 import { useUiStore } from '@/store/slices/uiStore';
 import { useAuthStore } from '@/store/slices/authStore';
 import { useNotifications } from '@/features/notifications/hooks/useNotifications';
@@ -70,6 +71,7 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         </IonTabBar>
       </IonTabs>
       <CreateMenuModal isOpen={isCreateMenuOpen} onClose={closeCreateMenu} />
+      <SideMenu />
     </>
   );
 };
