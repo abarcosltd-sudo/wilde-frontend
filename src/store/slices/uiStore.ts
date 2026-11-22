@@ -11,11 +11,14 @@ export interface Toast {
 
 interface UiState {
   isCreateMenuOpen:      boolean;
+  isSideMenuOpen:        boolean;
   isCommandPaletteOpen:  boolean;
   activeTab:             string;
   toast:                 Toast | null;
   openCreateMenu:        ()                                    => void;
   closeCreateMenu:       ()                                    => void;
+  openSideMenu:          ()                                    => void;
+  closeSideMenu:         ()                                    => void;
   openCommandPalette:    ()                                    => void;
   closeCommandPalette:   ()                                    => void;
   toggleCommandPalette:  ()                                    => void;
@@ -28,11 +31,14 @@ let toastId = 0;
 
 export const useUiStore = create<UiState>(set => ({
   isCreateMenuOpen:     false,
+  isSideMenuOpen:       false,
   isCommandPaletteOpen: false,
   activeTab:            'home',
   toast:                null,
   openCreateMenu:  () => set({ isCreateMenuOpen: true }),
   closeCreateMenu: () => set({ isCreateMenuOpen: false }),
+  openSideMenu:    () => set({ isSideMenuOpen: true }),
+  closeSideMenu:   () => set({ isSideMenuOpen: false }),
   // Lives in the store rather than in the palette component because the
   // keyboard shortcut, the header search button and the palette's own dismiss
   // all drive the same piece of state from different parts of the tree.

@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { IonPage, IonContent, IonRefresher, IonRefresherContent } from '@ionic/react';
-import { searchOutline, notificationsOutline } from 'ionicons/icons';
+import { searchOutline, menuOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
-import { useNotifications } from '@/features/notifications/hooks/useNotifications';
+import { useUiStore } from '@/store/slices/uiStore';
 import FeedPost from '@/components/ui/FeedPost';
 import FilterChips, { Chip } from '@/components/ui/FilterChips';
 import Wordmark from '@/components/ui/Wordmark';
@@ -25,7 +25,7 @@ const HomePage: React.FC = () => {
   const {
     trending, feed, refresh, isLoading, feedError, trendingError, retryFeed, retryTrending,
   } = useHomeFeed();
-  const { unreadCount } = useNotifications();
+  const openSideMenu = useUiStore(s => s.openSideMenu);
   const history = useHistory();
   const [filter, setFilter] = useState('all');
 
@@ -42,15 +42,14 @@ const HomePage: React.FC = () => {
         </IonRefresher>
         <div className={PAGE_CLASS}>
           <div className="mx-auto w-full max-w-xl">
-            <header className="flex items-center justify-between mb-3">
-              <h1 className="m-0"><Wordmark /></h1>
-              <div className="flex items-center">
-                {/* Search lives on Explore, which has no tab of its own. */}
-                <IconButton icon={searchOutline} label="Search"
-                  onClick={() => history.push(ROUTES.EXPLORE)} />
-                <IconButton icon={notificationsOutline} label="Notifications" badge={unreadCount}
-                  onClick={() => history.push(ROUTES.NOTIFICATIONS)} />
-              </div>
+            {/* Menu left, wordmark centred, search right, as in the design. The
+                bell that used to sit here is the Activity tab now. */}
+            <header className="grid grid-cols-[auto_1fr_auto] items-center mb-3 -mx-2">
+              <IconButton icon={menuOutline} label="Menu" onClick={openSideMenu} />
+              <h1 className="m-0 justify-self-center"><Wordmark /></h1>
+              {/* Search lives on Explore, which has no tab of its own. */}
+              <IconButton icon={searchOutline} label="Search"
+                onClick={() => history.push(ROUTES.EXPLORE)} />
             </header>
 
             <FilterChips chips={CHIPS} value={filter} onChange={setFilter} label="Filter by format" />

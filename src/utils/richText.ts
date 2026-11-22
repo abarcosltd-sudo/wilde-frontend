@@ -46,3 +46,21 @@ export const truncateHtml = (html: string, maxChars: number): string => {
   for (const child of Array.from(container.childNodes)) walk(child);
   return container.innerHTML;
 };
+
+/**
+ * The readable text of a stored work, for previews.
+ *
+ * Rich-text types are stored as HTML and the rest as plain text with real line
+ * breaks, so this accepts either: block ends become a space, tags are dropped,
+ * and newlines in plain text survive (a poem preview should keep its lines).
+ * Parsed with `DOMParser`, which builds an inert document — nothing in it runs.
+ */
+export const toPlainText = (html: string): string => {
+  const doc = new DOMParser().parseFromString(
+    html.replace(/<\/(p|div|li|h[2-4])>|<br\s*\/?>/gi, ' '), 'text/html');
+  return (doc.body.textContent ?? '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ ?\n ?/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};

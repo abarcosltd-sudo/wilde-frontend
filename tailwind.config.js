@@ -74,6 +74,10 @@ module.exports = {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
+        'slide-in-left': {
+          '0%':   { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
         'fade-in': {
           '0%':   { opacity: '0' },
           '100%': { opacity: '1' },
@@ -89,6 +93,7 @@ module.exports = {
       animation: {
         shimmer: 'shimmer 1.6s infinite',
         'fade-in': 'fade-in 220ms ease-out both',
+        'slide-in-left': 'slide-in-left 240ms cubic-bezier(0.22, 1, 0.36, 1) both',
         // Held back long enough that an upload finishing in a blink never
         // flashes a progress bar on screen.
         'fade-in-delayed': 'fade-in 200ms ease-out 300ms both',
