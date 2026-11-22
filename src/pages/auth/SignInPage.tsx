@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IonPage, IonContent, IonIcon } from '@ionic/react';
 import { logoGoogle } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
@@ -6,9 +6,36 @@ import { signIn, signInWithGoogle } from '@/firebase/auth.helpers';
 import { ROUTES } from '@/constants';
 import Button from '@/components/ui/Button';
 import Swal from '@/utils/swal';
+import { googleSignInError } from '@/utils/authErrors';
 
 const SignInPage: React.FC = () => {
   const history = useHistory();
+  const [isGoogleBusy, setGoogleBusy] = useState(false);
+
+  /**
+   * `signInWithPopup` has to start synchronously inside the tap, or browsers
+   * treat the popup as unsolicited and block it. Nothing is awaited before it.
+   *
+   * Success needs no navigation here: signing in loads the profile, and
+   * `GuestGuard` sends anyone with one on to Home. Failure used to be an
+   * unhandled promise rejection, so a blocked or closed popup left the button
+   * looking dead with nothing on screen.
+   */
+  const handleGoogle = async () => {
+    setGoogleBusy(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      const message = googleSignInError(err);
+      if (message) {
+        // The code is what support needs; the person sees the plain-words message.
+        console.error('Google sign-in failed:', (err as { code?: string })?.code, err);
+        Swal.fire({ icon: 'error', ...message });
+      }
+    } finally {
+      setGoogleBusy(false);
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,7 +81,7 @@ const SignInPage: React.FC = () => {
             </button>
             <Button type="submit" expand="block">Sign In</Button>
           </form>
-          <Button variant="outline" expand="block" onClick={signInWithGoogle}>
+          <Button variant="outline" expand="block" onClick={handleGoogle} isLoading={isGoogleBusy}>
             <IonIcon icon={logoGoogle} aria-hidden="true" className="mr-2" />
             Continue with Google
           </Button>

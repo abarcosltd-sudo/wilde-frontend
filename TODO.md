@@ -456,18 +456,6 @@ app already does were rebuilt in the new look; everything else in the PDF is bel
 - [ ] **Poem editor:** line numbers, stanza forms (sonnet, haiku, villanelle).
 - [ ] **Artwork editor:** up to 8 photos, dimensions, medium, framing.
 
-## Data protection & privacy testing (2026-10-06)
-
-Full plan in `DATA-SECURITY-ROADMAP.md` (GDPR, NDPA/NDPR/GAID, PCI SAQ A, with HIPAA as
-a benchmark only). Findings from reading the code, each to be confirmed by a test:
-
-- [ ] **Drafts are world-readable.** `Works`/`Chapters` are `read: if true` and drafts
-  share those collections, while the Privacy page says drafts are "visible only to you".
-  Confirm with a rules test, then split private and paid bodies out of the public docs.
-- [ ] **No account deletion, data export, consent capture or age gate** anywhere in `src/`.
-- [ ] **Privacy page is inaccurate** (drafts claim; stale Hire/`mailto:` warning) and
-  there is no real privacy notice or terms of service.
-- [ ] **Google sign-in publishes part of the email**: `useAuth.ts:23` builds the public
 ## Menu and draft deletion (2026-11-22)
 
 From "WIlde document update.docx" (items 1 and 2 of its four requests).
@@ -508,7 +496,51 @@ From "WIlde document update.docx" (items 1 and 2 of its four requests).
   Profile into the menu. Messaging does not exist (Hire is one-directional), so the tab
   bar is unchanged until that is decided.
 
-  `username` from `email.split('@')[0]`.
+## Data protection & privacy testing (2026-10-06)
+
+Full plan in `DATA-SECURITY-ROADMAP.md` (GDPR, NDPA/NDPR/GAID, PCI SAQ A, with HIPAA as
+a benchmark only). Findings from reading the code, each to be confirmed by a test:
+
+- [ ] **Drafts are world-readable.** `Works`/`Chapters` are `read: if true` and drafts
+  share those collections, while the Privacy page says drafts are "visible only to you".
+  Confirm with a rules test, then split private and paid bodies out of the public docs.
+- [ ] **No account deletion, data export, consent capture or age gate** anywhere in `src/`.
+- [x] **Privacy page was inaccurate** (2026-10-16) — rewritten from `firestore.rules` and the
+  code: public / signed-in / involved-parties / staff / third-party sections, a plain note
+  that drafts and paid text are not locked down at database level, and no more `mailto:`
+  warning. Still not a legal policy: a real privacy notice and terms of service remain to
+  be written and reviewed. Keep the page in step with the rules whenever either changes.
+  - The "Deleting your account or getting your data" line points to support. That is a
+    commitment to handle requests by hand until export and erasure are built; confirm it
+    is one you can keep, or reword it.
+- [x] **Google sign-in published part of the email** (2026-10-16) — new Google users now get
+  a handle built from their display name and account id (`utils/username.ts`), never from
+  the email.
+- [x] **"Continue with Google" failed silently** (2026-11-22) — a blocked, closed or failed
+  popup was an unhandled rejection with nothing on screen. Failures now show a plain-words
+  message (`utils/authErrors.ts`), the button shows a spinner and cannot be double-tapped,
+  and a new Google user whose profile cannot be created is told so and signed out instead
+  of being left half signed in. The success path was not tested: it needs a real Google
+  account.
+  - **Check in the Firebase console** (cannot be done from code): the live web address is
+    listed under Authentication → Settings → Authorized domains, and Google is enabled as a
+    sign-in method. Either being wrong gives exactly this symptom.
+  - Google refuses sign-in from embedded browsers (Instagram, WhatsApp, Facebook). The
+    message says to open Wilde in the browser; detecting them up front would be better.
+- [ ] **New Google users skip onboarding.** Email sign-ups go to `/onboarding` (pick creative
+  roles); Google sign-ups land on Home with `roles: []`. Needs to know the user is new
+  (`getAdditionalUserInfo(result).isNewUser`) and to wait for the profile to exist first.
+- [ ] **No Google button on Sign Up**, and email sign-in still shows Firebase's raw error
+  text (`Firebase: Error (auth/invalid-credential).`). `authErrors.ts` is the place to
+  extend.
+- [ ] **Existing Google users keep the old handle.** Anyone who signed in with Google
+  before this change has the part of their email before the `@` as their public username,
+  and cannot change it: `EditProfileModal` has no username field. Needs a username editor
+  and a one-off script (dry-run by default, like `scripts/grant-admin-role.mjs`) that finds
+  accounts whose username equals their Auth email's local part and issues a new handle.
+- [ ] **Hire message is stored but never shown.** `useHireRequest` saves the message to
+  `HireRequests`, but the recipient's notification carries only the sender's name and the
+  subject, and no screen reads the request. Surface it, or stop collecting it.
 - [ ] **Latent email leak**: backend `/auth/sync-user` writes `email` into the
   world-readable `Users` doc (uncalled today); `Reminders` also stores email.
 - [ ] **PII in backend logs**: `morgan('combined')` logs IP and user agent; the mailer logs
