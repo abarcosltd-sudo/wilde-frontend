@@ -10,6 +10,7 @@ import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
 import { useUser } from '@/hooks/useUser';
 import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useTrackView } from '@/hooks/useTrackView';
+import { ROUTES } from '@/constants';
 import { formatCount } from '@/utils';
 import { Work } from '@/types';
 import Avatar from '@/components/ui/Avatar';
@@ -81,7 +82,18 @@ const ReadWorkPage: React.FC = () => {
             <h2 className="flex-1 text-center font-bold text-base truncate">
               {work?.title ?? (isLoading ? '' : 'Not found')}
             </h2>
-            <span className="min-w-11" />
+            {/* Only the author gets this. It is the way back into the editor now
+                that tapping a published work opens the reader. A word, not an
+                icon: "Edit" has to be unmistakable. */}
+            {isOwner ? (
+              <button type="button" onClick={() => history.push(ROUTES.WRITING_STUDIO.replace(':workId', workId))}
+                className="shrink-0 rounded-full bg-wilde-subtle px-4 py-2 text-[15px] font-semibold
+                  active:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-strong">
+                Edit
+              </button>
+            ) : (
+              <span className="min-w-11" />
+            )}
           </div>
         </IonToolbar>
       </IonHeader>

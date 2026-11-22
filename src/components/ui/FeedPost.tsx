@@ -5,6 +5,7 @@ import { heartOutline, heart, eyeOutline, chevronForwardOutline } from 'ionicons
 import { Work } from '@/types';
 import { formatCount, formatCurrency, formatTimeShort, truncate } from '@/utils';
 import { FORMATS } from '@/utils/formats';
+import { workRoute } from '@/utils/workFlow';
 import { useUser } from '@/hooks/useUser';
 import { useMyLikes, useToggleLike } from '@/hooks/useWorkLikes';
 import { useBuyWork } from '@/features/marketplace/hooks/useBuyWork';
@@ -43,8 +44,7 @@ const FeedPost: React.FC<{ work: Work }> = ({ work }) => {
   useEffect(() => { setImageError(false); }, [work.coverImageUrl]);
 
   const open = () => {
-    const route = isOwn ? ROUTES.WRITING_STUDIO : ROUTES.READ_WORK;
-    history.push(route.replace(':workId', work.id));
+    history.push(workRoute(work, user?.id));
   };
 
   const openAuthor = () => history.push(ROUTES.CREATOR_PROFILE.replace(':uid', work.authorId));
